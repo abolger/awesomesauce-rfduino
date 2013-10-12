@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">RFDuino-Android Examples</string>
+
+    <string-array name="example_activities">
+        <item>RgbLedExample</item>
+        <item>ButtonDetectorExample</item>
+        <item>LedBlinkExample</item>
+        <item>ReadRFDuinoExample</item>
+        <item>SetClockExample</item>
+        <item>ReadBatteryLevelExample</item>
+    </string-array>
+
+    <string name="hello_world">Hello world!</string>
+    <string name="menu_settings">Settings</string>
+    <string name="title_activity_led_blink_example">LedBlinkExample</string>
+
+    <string name="click_me_to_turn_on_blinking">Click me to turn on blinking!</string>
+    
+</resources>
