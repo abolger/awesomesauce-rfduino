@@ -6,7 +6,7 @@
     <string-array name="example_activities">
         <item>RgbLedExample</item>
         <item>ButtonDetectorExample</item>
-        <item>LedBlinkExample</item>
+        <item>LedButtonExample</item>
         <item>ReadRFDuinoExample</item>
         <item>SetClockExample</item>
         <item>ReadBatteryLevelExample</item>

@@ -5,8 +5,8 @@
     android:versionName="1.0" >
 
     <uses-sdk
-        android:minSdkVersion="7"
-        android:targetSdkVersion="16" />
+        android:minSdkVersion="16"
+        android:targetSdkVersion="18" />
 
     <application
         android:allowBackup="true"
@@ -23,9 +23,11 @@
             </intent-filter>
         </activity>
         <activity
-            android:name="com.rfduino.examples.LedBlinkExample"
+            android:name="com.rfduino.examples.LedButtonExample"
             android:label="@string/title_activity_led_blink_example" >
         </activity>
     </application>
-
+	 <uses-permission android:name="android.permission.BLUETOOTH" />
+   <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
+  
 </manifest>
