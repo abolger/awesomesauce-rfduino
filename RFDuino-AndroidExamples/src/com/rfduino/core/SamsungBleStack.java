@@ -114,8 +114,17 @@ public class SamsungBleStack extends BluetoothLEStack{
 				connectedDevice = localDevice; 
 				successfulConnection = true;
 				Log.i(logTag, "Received onLEDeviceConnectedBroadcast");
+				ArrayList<String> uuids = new ArrayList<String>();
+				for (ParcelUuid p: connectedDevice.getUuids()){
+					uuids.add(p.getUuid().toString());
+					String logStr = "Found Service with UUID: "
+						+ p.getUuid().toString();
+					Log.d(logTag, logStr);
+				}
+				allowedUUIDs =  uuids;
+				
 				//startReadingRSSI();
-				startDiscoveringCharacteristics();
+				//startDiscoveringCharacteristics();
 			} else if (str.equals(RFDuinoBLEProfile.DEVICE_DISCONNECTED) || str.equals(RFDuinoBLEProfile.DEVICE_LINK_LOSS)) {
 				// re-connect if there is any sudden disconnection
 				bluetoothLEService.connectLEDevice(connectedDevice);
@@ -170,11 +179,7 @@ public class SamsungBleStack extends BluetoothLEStack{
 	public SamsungBleStack(BluetoothDevice device, Activity hostActivity){
 		hostAndroidActivity = hostActivity;
 		connectedDevice = device;
-		ArrayList<String> uuids = new ArrayList<String>();
-		for (ParcelUuid p: device.getUuids()){
-			uuids.add(p.getUuid().toString());
-		}
-		allowedUUIDs =  uuids;
+		
 		
 		//Create a binding between our application and the Bluetooth LE service we're about to start. 
 		bluetoothBinding = new ServiceConnection()
