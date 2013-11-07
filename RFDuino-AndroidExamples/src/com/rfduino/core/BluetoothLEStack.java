@@ -26,6 +26,8 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 import java.util.ArrayList;
+import java.util.List;
+
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -39,11 +41,18 @@ import android.os.Build;
 import android.util.Log;
 import android.widget.ArrayAdapter;
 
-public class BluetoothLEStack {
+public abstract class BluetoothLEStack {
+	public final static String logTag = "BluetoothLEStack";
 	private final static int ANDROID_BLUETOOTH_ENABLE_REQ = 123;
 	
 	public static ArrayList<BluetoothDevice> discoveredDevices = new ArrayList<BluetoothDevice>();
-	private static boolean scanning = false;
+	protected static boolean scanning = false;
+	protected Context hostAndroidActivity;
+	protected BluetoothDevice connectedDevice;
+	public List<String> allowedUUIDs = null;
+	protected String presentUUIDtoRead;
+	
+	
 	
 	public static void showFoundBluetoothDevices(Context hostActivity, OnClickListener rfduinoChosenListener) {
 		//An ArrayAdapter is a connector class: the adapter automatically checks for updates in our underlying datastructure and 
@@ -66,7 +75,7 @@ public class BluetoothLEStack {
 	 *  "stopSearchingForBluetoothDevices" function when they are done.
 	 * **/
 	@SuppressLint("NewApi")
-	public static void beginSearchingForBluetoothDevices(Activity hostActivity){
+	public static boolean beginSearchingForBluetoothDevices(Activity hostActivity){
 		//If Bluetooth is not turned on, display notice to the user requesting permission to turn it on. 
 		if (!BluetoothAdapter.getDefaultAdapter().isEnabled()) {
 		    Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
@@ -74,20 +83,31 @@ public class BluetoothLEStack {
 		}
 		
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2){
-			BluetoothAdapter.getDefaultAdapter().startLeScan(AndroidBleStack.onBluetoothFoundCallback);
+			AndroidBleStack.startLeScan(); 
 			scanning = true;
 		} else {
-			Log.w("RFDuinoBluetooth", "Bluetooth 4.3 API Not supported yet, attempting to use Samsung BLE library instead...");
-			SamsungBleStack.startLeScan(hostActivity);
-			scanning = true;
+			
+			try {
+				SamsungBleStack.loadSamsungLibraries(hostActivity.getApplicationContext());
+				SamsungBleStack.startLeScan(hostActivity);
+				scanning = true;
+				Log.w(logTag, "Starting BLE device scan");
+				
+			} catch (Exception e){
+				Log.w(logTag, "Failed to use Samsung libraries to support BLE. No BLE support available for this device");
+				scanning = false;
+			}
+			
+			
 		}
+		return scanning;
 	}
 	
 	@SuppressLint("NewApi")
 	public static void stopSearchingForBluetoothDevices(Activity hostActivity){
 
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2){
-				BluetoothAdapter.getDefaultAdapter().stopLeScan(AndroidBleStack.onBluetoothFoundCallback);
+			AndroidBleStack.stopLeScan();	
 			scanning = false;
 		} else {
 			Log.w("RFDuinoBluetooth", "Bluetooth 4.3 API Not supported, attempting to use Samsung BLE library instead...");
@@ -100,47 +120,26 @@ public class BluetoothLEStack {
 	
 	
 	
+	/** Connect to a chosen Bluetooth Device using whatever BLE Stack is available. **/
+	public static BluetoothLEStack connectToBluetoothLEStack(BluetoothDevice device, Activity hostActivity, String uuidStringRepresentation){
+		
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2){
+			return new AndroidBleStack(device, null, hostActivity);
+			
+		} else {
+			//See if Samsung (Broadcom-based) Bluetooth Low Energy stack will work- works on Android 4.1 and 4.2
+			return new SamsungBleStack(device, hostActivity);
+		}
+		
+	}
+
+
+	public abstract void disconnect();
 	
 	
+	public abstract void readBLECharacteristic(String UUID);
 	
-	
-	
-//	
-//
-//
-//	private android.bluetooth.BluetoothGatt rfduinoGattServer;
-//	private android.bluetooth.BluetoothGattCallback activityGattCallback;
-//	private Context hostAndroidActivity;
-//	
-//	/** Changes callback function for a radio- stops whatever callback function was being performed before and begins performing new set of callbacks.**/
-//	public void registerCallbackFunction(android.bluetooth.BluetoothGattCallback customCallbackFunction){
-//		activityGattCallback = customCallbackFunction;
-//		if (rfduinoGattServer != null) rfduinoGattServer.disconnect();
-//		rfduinoGattServer.getDevice().connectGatt(hostAndroidActivity, false, activityGattCallback);
-//	}
-//	
-//	
-//	
-//	/** Connects to a chosen Bluetooth device by known bluetooth MAC address
-//	*   and registers the callback function to be invoked when we get data from this device.
-//	 **/
-//	public RFDuinoBluetooth(String address, android.bluetooth.BluetoothGattCallback customCallbackFunction, Context hostActivity) {
-//		BluetoothDevice device = BluetoothAdapter.getDefaultAdapter().getRemoteDevice(address);
-//		hostAndroidActivity = hostActivity;
-//		activityGattCallback = customCallbackFunction;
-//		rfduinoGattServer = device.connectGatt(hostAndroidActivity, false, activityGattCallback);
-//		
-//	}
-//	
-//	/** Connects to a chosen Bluetooth device and registers the callback function to be invoked when we get data from this device. **/
-//	public RFDuinoBluetooth(BluetoothDevice device, android.bluetooth.BluetoothGattCallback customCallbackFunction, Context hostActivity) {
-//		hostAndroidActivity = hostActivity;
-//		activityGattCallback = customCallbackFunction;
-//		rfduinoGattServer = device.connectGatt(hostAndroidActivity, false, activityGattCallback);
-//		
-//		
-//	}
-//	
+
 	
 }
 

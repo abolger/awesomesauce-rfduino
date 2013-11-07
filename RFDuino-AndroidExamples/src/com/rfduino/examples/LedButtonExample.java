@@ -1,7 +1,10 @@
 package com.rfduino.examples;
 
+import com.rfduino.R;
 import com.rfduino.core.BluetoothLEStack;
+import com.rfduino.core.RFDuinoSystemCharacteristics;
 import com.rfduino.examples.callbacks.LedButtonCallback;
+import com.samsung.bluetoothle.BluetoothLEClientChar;
 
 import android.os.Bundle;
 import android.app.Activity;
@@ -16,8 +19,8 @@ import android.widget.CheckBox;
 
 public class LedButtonExample extends Activity {
 	
-	
-	
+	BluetoothLEStack rfduinoConnection;
+	BluetoothDevice chosenBluetoothDevice;
 	
 	/**
 	 * Creates our main layout for this page (checkbox), starts searching for bluetooth devices, and shows a list of 
@@ -29,14 +32,29 @@ public class LedButtonExample extends Activity {
 		setContentView(R.layout.activity_led_blink_example);
 		
 		//Get the bluetooth device that we put here: this comes from right before we started this activity on the "ListAllExamples.java" screen. 
-		BluetoothDevice chosenBluetoothDevice = (BluetoothDevice) getIntent().getExtras().get("bluetooth_device");
-	//	new RFDuinoBluetooth(chosenBluetoothDevice, new LedButtonCallback() , LedButtonExample.this);
-		Log.i("LEDBlinkExample", "Chose to connect to bluetooth device:" + chosenBluetoothDevice.getName()+" "+chosenBluetoothDevice.getAddress() );
+		chosenBluetoothDevice = (BluetoothDevice) getIntent().getExtras().get("bluetooth_device");
+		Log.i(BluetoothLEStack.logTag, "Chosen device is"+ chosenBluetoothDevice);
 		
+		rfduinoConnection = BluetoothLEStack.connectToBluetoothLEStack(chosenBluetoothDevice, this, RFDuinoSystemCharacteristics.RFDUINO_PROFILE_RECEIVE_UUID);
 		
 		
 	}
+	
+	@Override 
+	public void onDestroy(){
+		rfduinoConnection.disconnect();
+		rfduinoConnection = null;
+		super.onDestroy();
+	}
 
+	@Override 
+	public void onResume(){
+		if (rfduinoConnection == null){
+			rfduinoConnection = BluetoothLEStack.connectToBluetoothLEStack(chosenBluetoothDevice, this, RFDuinoSystemCharacteristics.RFDUINO_PROFILE_RECEIVE_UUID);
+		}
+		super.onResume();
+	}
+	
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
 		// Inflate the menu; this adds items to the action bar if it is present.
@@ -45,6 +63,11 @@ public class LedButtonExample extends Activity {
 	}
 
 	public void onLedCheckboxClicked(View view){
+		
+		//Now that we're connected, send out the command to actually do the reading:
+		if (rfduinoConnection.allowedUUIDs.size() > 0){
+			rfduinoConnection.readBLECharacteristic(rfduinoConnection.allowedUUIDs.get(0));
+		}
 		    // Is the view now checked?
 		    boolean checked = ((CheckBox) view).isChecked();
 		    

@@ -1,5 +1,6 @@
 package com.rfduino.examples;
 
+import com.rfduino.R;
 import com.rfduino.core.BluetoothLEStack;
 import com.rfduino.examples.callbacks.LedButtonCallback;
 
@@ -19,6 +20,7 @@ public class ListAllExamples extends ListActivity {
 
 	Intent chosenExample;
 	BluetoothDevice chosenBluetoothDevice;
+	
 	
 	@Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -41,9 +43,9 @@ public class ListAllExamples extends ListActivity {
         list.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View viewClicked,int position, long id) {
-					BluetoothLEStack.beginSearchingForBluetoothDevices(ListAllExamples.this);
 					//Use the XML list in strings.xml to get the Java class name of the example we want to start and store that value for once we've chosen a radio.
 					try {
+						BluetoothLEStack.beginSearchingForBluetoothDevices(ListAllExamples.this);
 						chosenExample = new Intent(viewClicked.getContext(), Class.forName("com.rfduino.examples." + getListView().getItemAtPosition(position).toString()));
 					} catch (ClassNotFoundException e) {
 						e.printStackTrace();
@@ -60,11 +62,16 @@ public class ListAllExamples extends ListActivity {
 				}
 
 			
-        });
+        }
+        
+        );
     }
 	
-	
-	
+	@Override 
+	public void onDestroy(){
+		BluetoothLEStack.stopSearchingForBluetoothDevices(this);
+		super.onDestroy();
+	}
 	
 	
 	/** 
