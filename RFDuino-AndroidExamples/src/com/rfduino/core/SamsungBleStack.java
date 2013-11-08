@@ -10,6 +10,9 @@ import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import java.net.URLClassLoader;
 
+import com.samsung.bluetoothle.BluetoothLEClientChar;
+import com.samsung.bluetoothle.BluetoothLEClientService;
+
 
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
@@ -44,7 +47,7 @@ public class SamsungBleStack extends BluetoothLEStack{
 	boolean connecting = false;
 	boolean successfulConnection = false;
 	boolean disconnectCalled = false;
-	
+	Integer bleSemaphore = 0; //Only 1 cmd/response pair can be going at once on the Samsung stack, so enforce it with a lock.
 	Integer latestRSSIValue = null;
 	
 	//For Android 4.1, 4.2 (which doesn't have BluetoothAdapter.LeScanCallback class:  
@@ -96,6 +99,7 @@ public class SamsungBleStack extends BluetoothLEStack{
 		public void onReceive(Context context, Intent intent) {
 			String str = intent.getAction();
 			if (str.equals(RFDuinoBLEProfile.CHARACTERISITICS_REFRESH)) {
+				bleSemaphore -= 1;
 				BluetoothDevice localDevice = (BluetoothDevice) intent
 						.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
 				if (connectedDevice != null && localDevice != null
@@ -124,7 +128,10 @@ public class SamsungBleStack extends BluetoothLEStack{
 				allowedUUIDs =  uuids;
 				
 				//startReadingRSSI();
-				//startDiscoveringCharacteristics();
+				startDiscoveringCharacteristics();
+				
+				//bluetoothLEService.initializeProfileByUUID(connectedDevice, RFDuinoSystemCharacteristics.RFDUINO_PROFILE_SERVICE_UUID);
+				
 			} else if (str.equals(RFDuinoBLEProfile.DEVICE_DISCONNECTED) || str.equals(RFDuinoBLEProfile.DEVICE_LINK_LOSS)) {
 				// re-connect if there is any sudden disconnection
 				bluetoothLEService.connectLEDevice(connectedDevice);
@@ -293,7 +300,10 @@ public class SamsungBleStack extends BluetoothLEStack{
 		public void run() {
 			if (connectedDevice != null && disconnectCalled == false){
 				//Async call- results when returned from BT will be handled by readBroadcastReceiver
-				bluetoothLEService.getRssiValue(connectedDevice); 
+				if (bleSemaphore == 0){
+					bleSemaphore += 1;
+					bluetoothLEService.getRssiValue(connectedDevice); 
+				}
 			} else {
 				stopReadingRSSI(); // Stop our own thread if we disconnect
 			}
@@ -304,12 +314,17 @@ public class SamsungBleStack extends BluetoothLEStack{
 	private Runnable continuousCharRequest = new Runnable() {
 		public void run() {
 			if (connectedDevice != null && disconnectCalled == false){
-				//Async call- results when returned from BT will be handled by readBroadcastReceiver
-				bluetoothLEService.discoverCharByUuid(connectedDevice, RFDuinoSystemCharacteristics.RFDUINO_PROFILE_SERVICE_UUID); 
+				
+				if (bleSemaphore == 0){
+					bleSemaphore += 1;
+					//Async call- results when returned from BT will be handled by readBroadcastReceiver
+					bluetoothLEService.discoverCharacteristics(connectedDevice);
+				}
+				asyncRequestor.postDelayed(continuousCharRequest, 3000L); //Regardless of whether we wait or repost, try again in 3 seconds.
 			} else {
 				stopDiscoveringCharacteristics(); // Stop our own thread if we disconnect
 			}
-			asyncRequestor.postDelayed(continuousCharRequest, 3000L);
+			
 		}
 	};
 
@@ -322,7 +337,7 @@ public class SamsungBleStack extends BluetoothLEStack{
 	}
 
 	private void startDiscoveringCharacteristics() {
-	//	continuousCharRequest.run();
+		continuousCharRequest.run();
 		
 	}
 	private void stopDiscoveringCharacteristics() {
@@ -332,6 +347,9 @@ public class SamsungBleStack extends BluetoothLEStack{
 	
 	
 	
+
+	
+	
 	private final BroadcastReceiver readBroadcastReceiver = new BroadcastReceiver() {
 	
 		@Override
@@ -339,6 +357,8 @@ public class SamsungBleStack extends BluetoothLEStack{
 			String str = intent.getAction();
 			
 			 if (str.equals(RFDuinoBLEProfile.DEVICE_RSSI_VAL)) {
+				 bleSemaphore -= 1;
+					
 				BluetoothDevice localDevice = (BluetoothDevice) intent
 						.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
 				if (connectedDevice != null  && localDevice != null

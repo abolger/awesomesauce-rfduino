@@ -19,7 +19,7 @@ public class RFDuinoBLEProfile extends BluetoothLEClientProfile {
 	public static final String DEVICE_LINK_LOSS = "com.rfduino.core.bleprofile.action.linkloss";
 	public static final String DEVICE_RSSI_VAL = "com.rfduino.core.bleprofile.rssi";
 	private final String logTag = "RFDuinoBLEProfile";
-	private RFDuinoBLEService eService = null;
+	private ArrayList<RFDuinoBLEService> eServices = null;
 	//private ACCService aService = null;
 	private Context mContext;
 
@@ -28,10 +28,12 @@ public class RFDuinoBLEProfile extends BluetoothLEClientProfile {
 	public RFDuinoBLEProfile(Context baseContext) {
 		super(baseContext);
 		this.mContext = baseContext;
-		ArrayList al = new ArrayList();
-		eService = new RFDuinoBLEService();
-		al.add(eService);
-		registerLEProfile(al);
+		eServices = new ArrayList<RFDuinoBLEService>();
+		eServices.add(new RFDuinoBLEService(RFDuinoSystemCharacteristics.BLE_GENERIC_ACCESS_PROFILE_UUID));
+		eServices.add(new RFDuinoBLEService(RFDuinoSystemCharacteristics.BLE_GENERIC_ATTRIBUTE_PROFILE_UUID));
+		eServices.add(new RFDuinoBLEService(RFDuinoSystemCharacteristics.RFDUINO_PROFILE_SERVICE_UUID));
+		
+		registerLEProfile(eServices);
 	}
 
 	public void unregister() {
@@ -41,13 +43,12 @@ public class RFDuinoBLEProfile extends BluetoothLEClientProfile {
 
 	@Override
 	public void discoverCharacteristics(BluetoothDevice device) {
-		super.discoverCharacteristics(device);
 		Log.d(logTag, "Device"+ device.getAddress() +" discover characteristics called.");
+		super.discoverCharacteristics(device);
+		
 	}
 
-	public void discoverCharByUuid(BluetoothDevice device, String uuid) {
-		eService.discoverCharacteristics(device, uuid);
-	}
+	
 
 	@Override
 	public void onDiscoverCharacteristics(BluetoothDevice device) {
@@ -153,4 +154,21 @@ public class RFDuinoBLEProfile extends BluetoothLEClientProfile {
 		aService.writeClientConfigDesc(localBluetoothLEClientChar);
 	}
 	*/
+	
+	public void initializeProfileByUUID(BluetoothDevice paramBluetoothDevice, String fullUUID){
+		byte[] arrayOfByte = new byte[1];
+		arrayOfByte[0] = RFDuinoBLEService.BLE_START_FLAG;
+		/*BluetoothLEClientChar localBluetoothLEClientChar = eService.getCharbyUUID(paramBluetoothDevice, fullUUID);
+		localBluetoothLEClientChar.setCharValue(arrayOfByte);
+		eService.writeCharValue(localBluetoothLEClientChar,
+				BluetoothLEClientService.GATT_WRITE_CMD);
+*/
+		/*ArrayList WTF = eService.getAllChars(paramBluetoothDevice);
+		if (WTF != null){
+			for (Object o:WTF){
+				Log.i("RFDuinoBLEProfile", "available Char: "+o.toString() );
+			}
+		}*/
+		
+	}
 }

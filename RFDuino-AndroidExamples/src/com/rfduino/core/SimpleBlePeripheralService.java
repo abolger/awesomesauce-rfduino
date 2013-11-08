@@ -1,5 +1,8 @@
 package com.rfduino.core;
 
+import com.samsung.bluetoothle.BluetoothLEClientChar;
+import com.samsung.bluetoothle.BluetoothLEClientService;
+
 import android.app.Notification;
 import android.app.Service;
 import android.bluetooth.BluetoothDevice;
@@ -50,12 +53,14 @@ public class SimpleBlePeripheralService extends Service {
 		mBluetoothProfile.discoverCharacteristics(paramBluetoothDevice);
 	}
 
-	public void discoverCharByUuid(BluetoothDevice paramBluetoothDevice,
-			String paramString) {
-		mBluetoothProfile.discoverCharByUuid(paramBluetoothDevice,
-				paramString);
-	}
+	
 
+	public void initializeProfileByUUID(BluetoothDevice paramBluetoothDevice, String UUID){
+		mBluetoothProfile.initializeProfileByUUID(paramBluetoothDevice, UUID);
+		
+	}
+	
+	
 	public void setRemoteDevice(BluetoothDevice paramBluetoothDevice) {
 		mBluetoothProfile.setRemoteDevice(paramBluetoothDevice);
 	}
