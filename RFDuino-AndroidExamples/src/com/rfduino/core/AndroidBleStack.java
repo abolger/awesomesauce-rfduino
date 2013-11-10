@@ -105,5 +105,12 @@ public class AndroidBleStack extends BluetoothLEStack{
 		return null;
 	}
 
+
+	@Override
+	protected void connect(BluetoothDevice device, Activity hostActivity) {
+		// TODO Auto-generated method stub
+		
+	}
+
 	
 }

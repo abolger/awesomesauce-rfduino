@@ -45,9 +45,6 @@ public class SamsungBleStack extends BluetoothLEStack{
 	private SimpleBlePeripheralService bluetoothLEService;
 	private ServiceConnection bluetoothBinding; 
 	
-	boolean connecting = false;
-	boolean successfulConnection = false;
-	boolean disconnectCalled = false;
 	Integer bleSemaphore = 0; //Only 1 cmd/response pair can be going at once on the Samsung stack, so enforce it with a lock.
 	Integer latestRSSIValue = null;
 	
@@ -106,13 +103,30 @@ public class SamsungBleStack extends BluetoothLEStack{
 				connectedDevice = localDevice; 
 				Log.i(logTag, "Received onLEDeviceConnectedBroadcast");
 				successfulConnection = true;
+				
+				//If the GUI window is showing for this step, we can hide it now:
+				if (bluetoothConnectionWaitWindow != null && bluetoothConnectionWaitWindow.isShowing()){
+					bluetoothConnectionWaitWindow.dismiss();
+				}
+				
 				discoverAvailableCharacteristics();
 				
 				
 			} else  if (str.equals(BluetoothLEStack.DEVICE_DISCONNECTED) || str.equals(BluetoothLEStack.DEVICE_LINK_LOSS)) {
-				// re-connect if there is any sudden disconnection
-				bluetoothLEService.connectLEDevice(connectedDevice);
 				Log.i(logTag, "Unexpected disconnect notice received");
+				//Notify user of issue:
+				//If the GUI window is showing for this step, we can hide it now:
+				/*if (bluetoothConnectionWaitWindow != null && bluetoothConnectionWaitWindow.isShowing()){
+					bluetoothConnectionWaitWindow.setMessage("Could not connect to Bluetooth device.");
+					disconnect();
+					bluetoothConnectionWaitWindow.cancel();
+					
+				} else {
+					disconnect();
+				}*/
+				
+				
+				
 			} else {
 				Log.w(logTag, "onBluetoothConnectedReceiver received intent action "+str+" but does not handle it.");
 			}
@@ -161,10 +175,6 @@ public class SamsungBleStack extends BluetoothLEStack{
 	 * @param deviceServiceUUID UUID that identifies the serivce on your peripheral you are trying to connect to. UUIDs are either 16 or 128 bit and are specific to the peripheral 
 	 */
 	public SamsungBleStack(BluetoothDevice device, Activity hostActivity){
-		hostAndroidActivity = hostActivity;
-		connectedDevice = device;
-		
-		
 		//Create a binding between our application and the Bluetooth LE service we're about to start. 
 		bluetoothBinding = new ServiceConnection()
 		{
@@ -172,7 +182,8 @@ public class SamsungBleStack extends BluetoothLEStack{
 			{
 				bluetoothLEService = ((SimpleBlePeripheralService.ServiceBinder) service).getService();
 				if (bluetoothLEService == null){
-					disconnect(); //We failed, 
+					disconnect(); //We failed, stop trying to connect
+					return;
 				}
 				
 				
@@ -213,20 +224,8 @@ public class SamsungBleStack extends BluetoothLEStack{
 			}
 		};
 
-		//Use Android's "Service" API to initialize and keep an ongoing connection to the bluetooth device:
-		//See http://developer.android.com/reference/android/app/Service.html
-		//Note that for this to work, your service must be declared with the correct package name in the Android Manifest XML file.
-		Intent intent = new Intent(hostAndroidActivity, SimpleBlePeripheralService.class);
-		hostAndroidActivity.bindService(intent, bluetoothBinding, Context.BIND_AUTO_CREATE);
-		
-		//Tell Android that when the service is done connecting over bluetooth, we want to handle it with this asynchronous receiver:
-		hostAndroidActivity.registerReceiver(onBluetoothConnectedReceiver, new IntentFilter(BluetoothLEStack.DEVICE_LED_CONNECTED));
-		hostAndroidActivity.registerReceiver(onBluetoothConnectedReceiver, new IntentFilter(BluetoothLEStack.DEVICE_DISCONNECTED));
-		hostAndroidActivity.registerReceiver(onBluetoothConnectedReceiver, new IntentFilter(BluetoothLEStack.DEVICE_LINK_LOSS));
-		
-		hostAndroidActivity.registerReceiver(readBroadcastReceiver,  new IntentFilter(BluetoothLEStack.CHARACTERISTICS_REFRESH));
-		hostAndroidActivity.registerReceiver(readBroadcastReceiver,  new IntentFilter(BluetoothLEStack.DEVICE_RSSI_VAL));
-		
+		connect(device, hostActivity);
+				
 	}
 	
 	
@@ -234,14 +233,38 @@ public class SamsungBleStack extends BluetoothLEStack{
 	/** Disconnect from the Bluetooth Device. **/
 	public void disconnect(){
 		if (!disconnectCalled){
-			
 			hostAndroidActivity.unbindService(bluetoothBinding);
 			hostAndroidActivity.unregisterReceiver(readBroadcastReceiver);
 			hostAndroidActivity.unregisterReceiver(onBluetoothConnectedReceiver);
-			
 			disconnectCalled = true; 
 		}
 			
+	}
+	
+
+	@Override
+	protected void connect(BluetoothDevice device, Activity hostActivity) {
+		disconnectCalled = false; //Starting a new connection now. 
+		hostAndroidActivity = hostActivity;
+		connectedDevice = device;
+		
+		//Use Android's "Service" API to initialize and keep an ongoing connection to the bluetooth device:
+		//See http://developer.android.com/reference/android/app/Service.html
+		//Note that for this to work, your service must be declared with the correct package name in the Android Manifest XML file.
+		Intent intent = new Intent(hostAndroidActivity, SimpleBlePeripheralService.class);
+		hostAndroidActivity.bindService(intent, bluetoothBinding, Context.BIND_AUTO_CREATE);
+		
+		//Tell Android that when the service is done connecting over bluetooth, we want to handle it with this asynchronous receiver:
+		IntentFilter connectionFilter = new IntentFilter();
+		connectionFilter.addAction(BluetoothLEStack.DEVICE_LED_CONNECTED);
+		connectionFilter.addAction(BluetoothLEStack.DEVICE_LINK_LOSS);
+		connectionFilter.addAction(BluetoothLEStack.DEVICE_DISCONNECTED);
+		hostAndroidActivity.registerReceiver(onBluetoothConnectedReceiver, connectionFilter);
+		
+		IntentFilter readFilter = new IntentFilter(BluetoothLEStack.CHARACTERISTICS_REFRESH);
+		readFilter.addAction(BluetoothLEStack.DEVICE_RSSI_VAL);
+		hostAndroidActivity.registerReceiver(readBroadcastReceiver, readFilter);
+
 	}
 	
 	public Handler asyncRequestor = new Handler();
@@ -396,7 +419,7 @@ public class SamsungBleStack extends BluetoothLEStack{
 
 	@Override
 	public boolean discoverAvailableCharacteristics() {
-		if (successfulConnection){
+		if (successfulConnection && bleSemaphore == 0){
 			bleSemaphore +=1;
 			bluetoothLEService.discoverCharacteristics(connectedDevice);
 			return true;
@@ -469,6 +492,9 @@ public class SamsungBleStack extends BluetoothLEStack{
 		}
 		return null;
 	}
+
+
+	
 
 }
 

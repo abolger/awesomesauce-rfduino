@@ -86,6 +86,7 @@ public class ListAllExamples extends ListActivity {
 			
 			chosenBluetoothDevice = BluetoothLEStack.discoveredDevices.get(which);
 			chosenExample.putExtra("bluetooth_device", chosenBluetoothDevice);
+			
 			startActivity(chosenExample);
 			
 			

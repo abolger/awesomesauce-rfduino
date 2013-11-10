@@ -1,6 +1,7 @@
 package com.rfduino.core;
 
 import java.util.ArrayList;
+import java.util.List;
 
 
 import android.bluetooth.BluetoothDevice;
@@ -102,7 +103,8 @@ public class RFDuinoBLEProfile extends BluetoothLEClientProfile {
 	{
 		ArrayList<BluetoothLEClientChar> all= new ArrayList<BluetoothLEClientChar>();
 		for (BluetoothLEClientService service: eServices){
-			all.addAll(service.getAllChars(device));
+			List<BluetoothLEClientChar> chars = service.getAllChars(device);
+			if (chars != null){	all.addAll(chars); } 
 		}
 
 		return all;

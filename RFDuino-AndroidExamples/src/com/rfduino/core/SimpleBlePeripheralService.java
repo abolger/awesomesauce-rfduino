@@ -29,20 +29,14 @@ public class SimpleBlePeripheralService extends Service {
 		return mBinder;
 	}
 
+	@Override
 	public void onCreate() {
-		ArrayList<BluetoothLEClientService> potentialRfduinoServices = new ArrayList<BluetoothLEClientService>();
-		potentialRfduinoServices.add(new RFDuinoBLEService(RFDuinoSystemCharacteristics.BLE_GENERIC_ACCESS_PROFILE_UUID));
-		potentialRfduinoServices.add(new RFDuinoBLEService(RFDuinoSystemCharacteristics.BLE_GENERIC_ATTRIBUTE_PROFILE_UUID));
-		potentialRfduinoServices.add(new RFDuinoBLEService(RFDuinoSystemCharacteristics.RFDUINO_PROFILE_SERVICE_UUID));
-		
-		
-		mBluetoothProfile = new RFDuinoBLEProfile(getBaseContext(), potentialRfduinoServices );
 		startForeground(999, new Notification());
 	}
 
+	@Override
 	public void onDestroy() {
-		mBluetoothProfile.unregister();
-		mBluetoothProfile.finish();
+		disconnectLEDevice(mBluetoothProfile.getConnectedLEDevice());
 		super.onDestroy();
 	}
 
@@ -52,9 +46,11 @@ public class SimpleBlePeripheralService extends Service {
 	}
 
 	public void disconnectLEDevice(BluetoothDevice paramBluetoothDevice) {
-		if (mBluetoothProfile != null)
+		if (mBluetoothProfile != null){
 			mBluetoothProfile.disconnectLEDevice(paramBluetoothDevice);
 			mBluetoothProfile.finish();
+			mBluetoothProfile = null;
+		}
 	}
 
 	public void discoverCharacteristics(BluetoothDevice paramBluetoothDevice) {
@@ -70,6 +66,14 @@ public class SimpleBlePeripheralService extends Service {
 	
 	
 	public void setRemoteDevice(BluetoothDevice paramBluetoothDevice) {
+		ArrayList<BluetoothLEClientService> potentialRfduinoServices = new ArrayList<BluetoothLEClientService>();
+		potentialRfduinoServices.add(new RFDuinoBLEService(RFDuinoSystemCharacteristics.BLE_GENERIC_ACCESS_PROFILE_UUID));
+		potentialRfduinoServices.add(new RFDuinoBLEService(RFDuinoSystemCharacteristics.BLE_GENERIC_ATTRIBUTE_PROFILE_UUID));
+		potentialRfduinoServices.add(new RFDuinoBLEService(RFDuinoSystemCharacteristics.RFDUINO_PROFILE_SERVICE_UUID));
+		
+		//Create a new profile each time we connect, and destroy old profiles when we disconnect. 
+		mBluetoothProfile = new RFDuinoBLEProfile(getBaseContext(), potentialRfduinoServices );
+		
 		mBluetoothProfile.setRemoteDevice(paramBluetoothDevice);
 	}
 

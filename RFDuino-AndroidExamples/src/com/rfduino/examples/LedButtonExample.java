@@ -12,18 +12,30 @@ import com.samsung.bluetoothle.BluetoothLEClientChar;
 import android.os.Bundle;
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.ProgressDialog;
 import android.bluetooth.BluetoothDevice;
 import android.content.DialogInterface;
+import android.content.DialogInterface.OnCancelListener;
 import android.util.Log;
 import android.view.Menu;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.CheckBox;
+import android.widget.Toast;
 
 public class LedButtonExample extends Activity {
-	
 	BluetoothLEStack rfduinoConnection;
 	BluetoothDevice chosenBluetoothDevice;
+	
+	/** Tell the Bluetooth manager what to do if user decides not to connect anymore. **/
+	OnCancelListener onCancelConnectionAttempt = new OnCancelListener(){
+		@Override
+		public void onCancel(DialogInterface arg0) {
+			LedButtonExample.this.finish();
+		}
+	};
+	
+	
 	
 	/**
 	 * Creates our main layout for this page (checkbox), starts searching for bluetooth devices, and shows a list of 
@@ -38,7 +50,11 @@ public class LedButtonExample extends Activity {
 		chosenBluetoothDevice = (BluetoothDevice) getIntent().getExtras().get("bluetooth_device");
 		Log.i(BluetoothLEStack.logTag, "Chosen device is"+ chosenBluetoothDevice);
 		
-		rfduinoConnection = BluetoothLEStack.connectToBluetoothLEStack(chosenBluetoothDevice, this, RFDuinoSystemCharacteristics.RFDUINO_PROFILE_RECEIVE_UUID);
+		rfduinoConnection = BluetoothLEStack.connectToBluetoothLEStack(chosenBluetoothDevice, 
+				this,
+				RFDuinoSystemCharacteristics.RFDUINO_PROFILE_SERVICE_UUID,
+				onCancelConnectionAttempt
+				);
 		
 		
 	}
@@ -53,7 +69,11 @@ public class LedButtonExample extends Activity {
 	@Override 
 	public void onResume(){
 		if (rfduinoConnection == null){
-			rfduinoConnection = BluetoothLEStack.connectToBluetoothLEStack(chosenBluetoothDevice, this, RFDuinoSystemCharacteristics.RFDUINO_PROFILE_RECEIVE_UUID);
+			rfduinoConnection = BluetoothLEStack.connectToBluetoothLEStack(chosenBluetoothDevice,
+					this,
+					RFDuinoSystemCharacteristics.RFDUINO_PROFILE_RECEIVE_UUID,
+					onCancelConnectionAttempt
+				);
 		}
 		super.onResume();
 	}
@@ -76,6 +96,10 @@ public class LedButtonExample extends Activity {
 		
 		Map<String, Object> latestRead = rfduinoConnection.getLatestCharacteristics();
 		BluetoothLEClientChar c = ((BluetoothLEClientChar) latestRead.get(RFDuinoSystemCharacteristics.RFDUINO_PROFILE_RECEIVE_UUID));
+		if (c == null){
+			Toast.makeText(LedButtonExample.this, "Error reading value.", Toast.LENGTH_LONG);
+			return;
+		}
 		Log.i("LedButtonExample", "Received value:"+ BluetoothLEStack.hexStringToIntArray(c.getCharVaule()));
 		
 		
