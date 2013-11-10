@@ -26,7 +26,9 @@ SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
@@ -38,6 +40,7 @@ import android.content.Context;
 import android.content.DialogInterface.OnClickListener;
 import android.content.Intent;
 import android.os.Build;
+import android.os.Handler;
 import android.util.Log;
 import android.widget.ArrayAdapter;
 
@@ -49,9 +52,15 @@ public abstract class BluetoothLEStack {
 	protected static boolean scanning = false;
 	protected Context hostAndroidActivity;
 	protected BluetoothDevice connectedDevice;
-	public List<String> allowedUUIDs = null;
+	protected HashMap<String, Object> uuidsTolatestValues = new HashMap<String, Object>();
+	protected List<String> allowedUUIDs;
 	protected String presentUUIDtoRead;
 	
+	public static final String CHARACTERISTICS_REFRESH = "com.rfduino.core.bleprofile.action.refresh";
+	public static final String DEVICE_LED_CONNECTED = "com.rfduino.core.bleprofile.action.connected";
+	public static final String DEVICE_DISCONNECTED = "com.rfduino.core.bleprofile.action.disconnected";
+	public static final String DEVICE_LINK_LOSS = "com.rfduino.core.bleprofile.action.linkloss";
+	public static final String DEVICE_RSSI_VAL = "com.rfduino.core.bleprofile.rssi";
 	
 	
 	public static void showFoundBluetoothDevices(Context hostActivity, OnClickListener rfduinoChosenListener) {
@@ -136,10 +145,48 @@ public abstract class BluetoothLEStack {
 
 	public abstract void disconnect();
 	
-	
-	public abstract void readBLECharacteristic(String UUID);
+	/** Gets the latest available services from the Bluetooth Device. Returns false if the update could not be performed, true if the update is underway. 
+	 * Resulting services are accessible using getDiscoveredCharacteristics();
+	 * **/
+	public abstract boolean discoverAvailableCharacteristics();
 	
 
+	/** Returns UUIDs of all characteristics that can be read from this BluetoothDevice. What the UUID translates to  
+	 * is specified in the Bluetooth Profile standard here:https://developer.bluetooth.org/gatt/profiles/Pages/ProfilesHome.aspx
+	 * or may be custom to the hardware. 
+	 **/
+	public List<String> getDiscoveredCharacteristics() {
+		return allowedUUIDs;
+	}
+	
+	public abstract void selectCharacteristicToRead(String UUID);
+	
+	public Map<String, Object> getLatestCharacteristics(){
+		return uuidsTolatestValues;
+	}
+	
+	public abstract void startReadingRSSI();
+	public abstract void stopReadingRSSI();
+	public abstract Integer getLatestRSSIValue();
+	
+	
+	/**
+	 * Bluetooth LE Characteristics are transmitted strangley, so provide a utility method to translate: 
+	 * Translates character array returned from Bluetooth LE Characteristic into an array of Big-Endian integers: 
+	 * ['1','2','3','4'] will return [0x12, 0x34]. 
+	 */
+	public static int[] hexStringToIntArray(byte[] charArray){
+		String sRepr = new String(charArray);
+		int result[] = new int[charArray.length/2];
+
+		for(int i=0; i<charArray.length; i+=2)
+		{
+			result[i/2]  = Integer.parseInt( sRepr.substring(i, i+2), 16);
+		}
+
+		return result;
+	}
+	
 	
 }
 

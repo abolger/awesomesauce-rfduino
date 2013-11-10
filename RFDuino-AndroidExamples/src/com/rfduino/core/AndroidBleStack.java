@@ -72,8 +72,38 @@ public class AndroidBleStack extends BluetoothLEStack{
 
 
 	@Override
-	public void readBLECharacteristic(String UUID) {
-		//TODO: Implement this with a GattCallback function.
+	public boolean discoverAvailableCharacteristics() {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+
+	@Override
+	public void selectCharacteristicToRead(String UUID) {
+		// TODO Auto-generated method stub
 		
 	}
+
+
+	@Override
+	public void startReadingRSSI() {
+		// TODO Auto-generated method stub
+		
+	}
+
+
+	@Override
+	public void stopReadingRSSI() {
+		// TODO Auto-generated method stub
+		
+	}
+
+
+	@Override
+	public Integer getLatestRSSIValue() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	
 }

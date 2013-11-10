@@ -1,5 +1,8 @@
 package com.rfduino.examples;
 
+import java.util.List;
+import java.util.Map;
+
 import com.rfduino.R;
 import com.rfduino.core.BluetoothLEStack;
 import com.rfduino.core.RFDuinoSystemCharacteristics;
@@ -65,10 +68,20 @@ public class LedButtonExample extends Activity {
 	public void onLedCheckboxClicked(View view){
 		
 		//Now that we're connected, send out the command to actually do the reading:
-		if (rfduinoConnection.allowedUUIDs.size() > 0){
-			rfduinoConnection.readBLECharacteristic(rfduinoConnection.allowedUUIDs.get(0));
+		List<String> availableUUIDs = rfduinoConnection.getDiscoveredCharacteristics();
+		if (availableUUIDs != null && availableUUIDs.contains(RFDuinoSystemCharacteristics.RFDUINO_PROFILE_RECEIVE_UUID)){
+		  rfduinoConnection.selectCharacteristicToRead(RFDuinoSystemCharacteristics.RFDUINO_PROFILE_RECEIVE_UUID);
 		}
-		    // Is the view now checked?
+		
+		
+		Map<String, Object> latestRead = rfduinoConnection.getLatestCharacteristics();
+		BluetoothLEClientChar c = ((BluetoothLEClientChar) latestRead.get(RFDuinoSystemCharacteristics.RFDUINO_PROFILE_RECEIVE_UUID));
+		Log.i("LedButtonExample", "Received value:"+ BluetoothLEStack.hexStringToIntArray(c.getCharVaule()));
+		
+		
+		
+		
+		// Is the view now checked?
 		    boolean checked = ((CheckBox) view).isChecked();
 		    
 		    // Check which checkbox was clicked
@@ -76,6 +89,8 @@ public class LedButtonExample extends Activity {
 		        case R.id.checkBoxLedBlink:
 		            if (checked){
 		                //Send a message to turn on the LED
+		            	
+		            	
 		            } else {
 		               //Send a message to turn off the LED
 		            }

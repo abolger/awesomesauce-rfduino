@@ -1,5 +1,7 @@
 package com.rfduino.core;
 
+import android.bluetooth.BluetoothGatt;
+
 import com.samsung.bluetoothle.BluetoothLENamespace;
 
 public class RFDuinoSystemCharacteristics {
@@ -11,8 +13,10 @@ public class RFDuinoSystemCharacteristics {
 	
 
 	public static final String  RFDUINO_PROFILE_SERVICE_UUID = BluetoothLENamespace.toUuid128StringFormat(0x2220);
-	public static final String  RFDUINO_PROFILE_SEND_UUID = "2222";
-	public static final String  RFDUINO_PROFILE_RECEIVE_UUID = "2221";
-	public static final String  RFDUINO_DISCONNECT_UUID = "2223";
-	 
+	public static final String  RFDUINO_PROFILE_SEND_UUID = BluetoothLENamespace.toUuid128StringFormat(0x2222);
+	public static final String  RFDUINO_PROFILE_RECEIVE_UUID = BluetoothLENamespace.toUuid128StringFormat(0x2221);
+	public static final String  RFDUINO_DISCONNECT_UUID = BluetoothLENamespace.toUuid128StringFormat(0x2223);
+
+	public static final String RFDUINO_TEMPERATURE_CELSIUS_UUID = BluetoothLENamespace.toUuid128StringFormat(0x2a00);
+	
 }

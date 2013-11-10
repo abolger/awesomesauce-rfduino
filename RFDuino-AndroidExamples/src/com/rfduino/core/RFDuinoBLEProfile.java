@@ -13,26 +13,17 @@ import com.samsung.bluetoothle.BluetoothLEClientProfile;
 import com.samsung.bluetoothle.BluetoothLEClientService;
 
 public class RFDuinoBLEProfile extends BluetoothLEClientProfile {
-	public static final String CHARACTERISITICS_REFRESH = "com.rfduino.core.bleprofile.action.refresh";
-	public static final String DEVICE_LED_CONNECTED = "com.rfduino.core.bleprofile.action.connected";
-	public static final String DEVICE_DISCONNECTED = "com.rfduino.core.bleprofile.action.disconnected";
-	public static final String DEVICE_LINK_LOSS = "com.rfduino.core.bleprofile.action.linkloss";
-	public static final String DEVICE_RSSI_VAL = "com.rfduino.core.bleprofile.rssi";
 	private final String logTag = "RFDuinoBLEProfile";
-	private ArrayList<RFDuinoBLEService> eServices = null;
+	private ArrayList<BluetoothLEClientService> eServices = null;
 	//private ACCService aService = null;
 	private Context mContext;
 
 	
 
-	public RFDuinoBLEProfile(Context baseContext) {
+	public RFDuinoBLEProfile(Context baseContext, ArrayList<BluetoothLEClientService> desiredServices) {
 		super(baseContext);
 		this.mContext = baseContext;
-		eServices = new ArrayList<RFDuinoBLEService>();
-		eServices.add(new RFDuinoBLEService(RFDuinoSystemCharacteristics.BLE_GENERIC_ACCESS_PROFILE_UUID));
-		eServices.add(new RFDuinoBLEService(RFDuinoSystemCharacteristics.BLE_GENERIC_ATTRIBUTE_PROFILE_UUID));
-		eServices.add(new RFDuinoBLEService(RFDuinoSystemCharacteristics.RFDUINO_PROFILE_SERVICE_UUID));
-		
+		eServices = desiredServices; 
 		registerLEProfile(eServices);
 	}
 
@@ -54,18 +45,17 @@ public class RFDuinoBLEProfile extends BluetoothLEClientProfile {
 	public void onDiscoverCharacteristics(BluetoothDevice device) {
 		super.onDiscoverCharacteristics(device);
 		Intent localIntent = new Intent();
-		localIntent.setAction(CHARACTERISITICS_REFRESH).putExtra(
+		localIntent.setAction(BluetoothLEStack.CHARACTERISTICS_REFRESH).putExtra(
 				BluetoothDevice.EXTRA_DEVICE, device);
 		this.mContext.sendBroadcast(localIntent);
 
-		// enable/disable ACC
-		//this.enableACCService(device, 0x01);
+		
 	}
 
 	@Override
 	public void onGetRssiValue(BluetoothDevice device, String value) {
 		Intent localIntent = new Intent();
-		localIntent.setAction(DEVICE_RSSI_VAL)
+		localIntent.setAction(BluetoothLEStack.DEVICE_RSSI_VAL)
 				.putExtra(BluetoothDevice.EXTRA_DEVICE, device)
 				.putExtra(BluetoothDevice.EXTRA_RSSI, value);
 		this.mContext.sendBroadcast(localIntent);
@@ -75,7 +65,7 @@ public class RFDuinoBLEProfile extends BluetoothLEClientProfile {
 	public void onLEDeviceConnected(BluetoothDevice device) {
 		super.onLEDeviceConnected(device);
 		Intent localIntent = new Intent();
-		localIntent.setAction(DEVICE_LED_CONNECTED).putExtra(
+		localIntent.setAction(BluetoothLEStack.DEVICE_LED_CONNECTED).putExtra(
 				BluetoothDevice.EXTRA_DEVICE, device);
 		this.mContext.sendBroadcast(localIntent);
 	}
@@ -84,7 +74,7 @@ public class RFDuinoBLEProfile extends BluetoothLEClientProfile {
 	public void onLEDeviceDisconnected(BluetoothDevice device) {
 		super.onLEDeviceDisconnected(device);
 		Intent localIntent = new Intent();
-		localIntent.setAction(DEVICE_DISCONNECTED).putExtra(
+		localIntent.setAction(BluetoothLEStack.DEVICE_DISCONNECTED).putExtra(
 				BluetoothDevice.EXTRA_DEVICE, device);
 		this.mContext.sendBroadcast(localIntent);
 	}
@@ -92,83 +82,44 @@ public class RFDuinoBLEProfile extends BluetoothLEClientProfile {
 	@Override
 	public void onLELinkLoss(BluetoothDevice device) {
 		Intent localIntent = new Intent();
-		localIntent.setAction(DEVICE_LINK_LOSS).putExtra(
+		localIntent.setAction(BluetoothLEStack.DEVICE_LINK_LOSS).putExtra(
 				BluetoothDevice.EXTRA_DEVICE, device);
 		this.mContext.sendBroadcast(localIntent);
 	}
 
-	
-	 /*public BluetoothLEClientChar getCharbyUUID(BluetoothDevice device, String uuid) 
-	 { return eService.getCharbyUUID(device, uuid); }
-	 */
 
-	/*
-	 * public void writeCharValue(BluetoothLEClientChar bleChar, int value) {
-	 * eService.writeCharValue(bleChar, value); }
-	 */
-
-	/*public void startECGRecording(BluetoothDevice device, int startFlag) {
-		byte[] arrayOfByte = new byte[1];
-		arrayOfByte[0] = ((byte) startFlag);
-		BluetoothLEClientChar localBluetoothLEClientChar = eService
-				.getCharbyUUID(device, ECGService.ECG_START_CHAR);
-		localBluetoothLEClientChar.setCharValue(arrayOfByte);
-		eService.writeCharValue(localBluetoothLEClientChar,
-				BluetoothLEClientService.GATT_WRITE_CMD);
+	public BluetoothLEClientChar getCharbyUUID(BluetoothDevice device, String uuid)
+	{
+		for (BluetoothLEClientService service: eServices){
+			BluetoothLEClientChar c = service.getCharbyUUID(device, uuid);
+			if (c != null) return c;
+		}
+		return null; //No such characteristic UUID available. 
 	}
-
-	public void enableACCService(BluetoothDevice device, int enable) {
-		byte[] arrayOfByte = new byte[1];
-		arrayOfByte[0] = ((byte) enable);
-		BluetoothLEClientChar localBluetoothLEClientChar = aService
-				.getCharbyUUID(device, ACCService.ACC_ENABLE_CHAR);
-		localBluetoothLEClientChar.setCharValue(arrayOfByte);
-		aService.writeCharValue(localBluetoothLEClientChar,
-				BluetoothLEClientService.GATT_WRITE_CMD);
-
-		// set notify
-		if (enable == 0x01) {
-			this.aService.registerWatcher();
-			// set client description
-			writeACCForNotification(device);
-			// writeACCForIndication(device);
-		} else {
-			this.aService.unregisterWatcher();
+	
+	@SuppressWarnings("unchecked")
+	public ArrayList<BluetoothLEClientChar> getAllChars(BluetoothDevice device)
+	{
+		ArrayList<BluetoothLEClientChar> all= new ArrayList<BluetoothLEClientChar>();
+		for (BluetoothLEClientService service: eServices){
+			all.addAll(service.getAllChars(device));
 		}
 
+		return all;
 	}
 
-	public void writeACCForIndication(BluetoothDevice paramBluetoothDevice) {
-		byte[] arrayOfByte = { 2, 0 };
-		BluetoothLEClientChar localBluetoothLEClientChar = aService
-				.getCharbyUUID(paramBluetoothDevice, ACCService.ACC_VALUE_CHAR);
-		localBluetoothLEClientChar.setClientConfigDesc(arrayOfByte);
-		aService.writeClientConfigDesc(localBluetoothLEClientChar);
-	}
-
-	public void writeACCForNotification(BluetoothDevice paramBluetoothDevice) {
-		byte[] arrayOfByte = { 1, 0 };
-		BluetoothLEClientChar localBluetoothLEClientChar = aService
-				.getCharbyUUID(paramBluetoothDevice, ACCService.ACC_VALUE_CHAR);
-		localBluetoothLEClientChar.setClientConfigDesc(arrayOfByte);
-		aService.writeClientConfigDesc(localBluetoothLEClientChar);
-	}
-	*/
-	
-	public void initializeProfileByUUID(BluetoothDevice paramBluetoothDevice, String fullUUID){
-		byte[] arrayOfByte = new byte[1];
-		arrayOfByte[0] = RFDuinoBLEService.BLE_START_FLAG;
-		/*BluetoothLEClientChar localBluetoothLEClientChar = eService.getCharbyUUID(paramBluetoothDevice, fullUUID);
-		localBluetoothLEClientChar.setCharValue(arrayOfByte);
-		eService.writeCharValue(localBluetoothLEClientChar,
-				BluetoothLEClientService.GATT_WRITE_CMD);
-*/
-		/*ArrayList WTF = eService.getAllChars(paramBluetoothDevice);
-		if (WTF != null){
-			for (Object o:WTF){
-				Log.i("RFDuinoBLEProfile", "available Char: "+o.toString() );
-			}
-		}*/
+	public void discoverCharacteristics(BluetoothDevice paramBluetoothDevice,
+			String uuid) {
+		
+		for (BluetoothLEClientService service: eServices){
+			service.discoverCharacteristics(paramBluetoothDevice, uuid);
+		}
+			
 		
 	}
+
+	
+	
+	 
+	
 }

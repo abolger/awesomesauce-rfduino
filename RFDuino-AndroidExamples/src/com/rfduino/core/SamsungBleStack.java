@@ -2,6 +2,7 @@ package com.rfduino.core;
 
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -11,7 +12,7 @@ import java.net.URL;
 import java.net.URLClassLoader;
 
 import com.samsung.bluetoothle.BluetoothLEClientChar;
-import com.samsung.bluetoothle.BluetoothLEClientService;
+
 
 
 import android.app.Activity;
@@ -91,48 +92,24 @@ public class SamsungBleStack extends BluetoothLEStack{
 		}
 	};
 	
-	
+
 	
 	public final BroadcastReceiver onBluetoothConnectedReceiver = new BroadcastReceiver(){
 		
 		@Override
 		public void onReceive(Context context, Intent intent) {
 			String str = intent.getAction();
-			if (str.equals(RFDuinoBLEProfile.CHARACTERISITICS_REFRESH)) {
-				bleSemaphore -= 1;
-				BluetoothDevice localDevice = (BluetoothDevice) intent
-						.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-				if (connectedDevice != null && localDevice != null
-						&& connectedDevice.equals(localDevice)) {
-					for (ParcelUuid pcb : connectedDevice.getUuids()) {
-						String logStr = "Found Service with UUID: "
-								+ pcb.toString();
-						Log.d(logTag, logStr);
-						//TODO: handle services in RFDuinoSystemCharacteristics so it doesn't matter which program you run?
-					}
-				}
-			} else if (str.equals(RFDuinoBLEProfile.DEVICE_LED_CONNECTED)) {
+			if (str.equals(BluetoothLEStack.DEVICE_LED_CONNECTED)) {
 				BluetoothDevice localDevice = (BluetoothDevice) intent
 						.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
 
 				connectedDevice = localDevice; 
-				successfulConnection = true;
 				Log.i(logTag, "Received onLEDeviceConnectedBroadcast");
-				ArrayList<String> uuids = new ArrayList<String>();
-				for (ParcelUuid p: connectedDevice.getUuids()){
-					uuids.add(p.getUuid().toString());
-					String logStr = "Found Service with UUID: "
-						+ p.getUuid().toString();
-					Log.d(logTag, logStr);
-				}
-				allowedUUIDs =  uuids;
+				successfulConnection = true;
+				discoverAvailableCharacteristics();
 				
-				//startReadingRSSI();
-				startDiscoveringCharacteristics();
 				
-				//bluetoothLEService.initializeProfileByUUID(connectedDevice, RFDuinoSystemCharacteristics.RFDUINO_PROFILE_SERVICE_UUID);
-				
-			} else if (str.equals(RFDuinoBLEProfile.DEVICE_DISCONNECTED) || str.equals(RFDuinoBLEProfile.DEVICE_LINK_LOSS)) {
+			} else  if (str.equals(BluetoothLEStack.DEVICE_DISCONNECTED) || str.equals(BluetoothLEStack.DEVICE_LINK_LOSS)) {
 				// re-connect if there is any sudden disconnection
 				bluetoothLEService.connectLEDevice(connectedDevice);
 				Log.i(logTag, "Unexpected disconnect notice received");
@@ -193,8 +170,11 @@ public class SamsungBleStack extends BluetoothLEStack{
 		{
 			public void onServiceConnected(ComponentName className, IBinder service) 
 			{
-				
 				bluetoothLEService = ((SimpleBlePeripheralService.ServiceBinder) service).getService();
+				if (bluetoothLEService == null){
+					disconnect(); //We failed, 
+				}
+				
 				
 				//Remove existing connections before continuing:
 				Iterator<BluetoothDevice> iterator = BluetoothAdapter.getDefaultAdapter().getBondedDevices()
@@ -240,12 +220,12 @@ public class SamsungBleStack extends BluetoothLEStack{
 		hostAndroidActivity.bindService(intent, bluetoothBinding, Context.BIND_AUTO_CREATE);
 		
 		//Tell Android that when the service is done connecting over bluetooth, we want to handle it with this asynchronous receiver:
-		hostAndroidActivity.registerReceiver(onBluetoothConnectedReceiver, new IntentFilter(RFDuinoBLEProfile.DEVICE_LED_CONNECTED));
-		hostAndroidActivity.registerReceiver(onBluetoothConnectedReceiver, new IntentFilter(RFDuinoBLEProfile.DEVICE_DISCONNECTED));
-		hostAndroidActivity.registerReceiver(onBluetoothConnectedReceiver, new IntentFilter(RFDuinoBLEProfile.DEVICE_LINK_LOSS));
-		hostAndroidActivity.registerReceiver(onBluetoothConnectedReceiver,  new IntentFilter(RFDuinoBLEProfile.CHARACTERISITICS_REFRESH));
+		hostAndroidActivity.registerReceiver(onBluetoothConnectedReceiver, new IntentFilter(BluetoothLEStack.DEVICE_LED_CONNECTED));
+		hostAndroidActivity.registerReceiver(onBluetoothConnectedReceiver, new IntentFilter(BluetoothLEStack.DEVICE_DISCONNECTED));
+		hostAndroidActivity.registerReceiver(onBluetoothConnectedReceiver, new IntentFilter(BluetoothLEStack.DEVICE_LINK_LOSS));
 		
-		hostAndroidActivity.registerReceiver(readBroadcastReceiver,  new IntentFilter(RFDuinoBLEProfile.DEVICE_RSSI_VAL));
+		hostAndroidActivity.registerReceiver(readBroadcastReceiver,  new IntentFilter(BluetoothLEStack.CHARACTERISTICS_REFRESH));
+		hostAndroidActivity.registerReceiver(readBroadcastReceiver,  new IntentFilter(BluetoothLEStack.DEVICE_RSSI_VAL));
 		
 	}
 	
@@ -258,6 +238,7 @@ public class SamsungBleStack extends BluetoothLEStack{
 			hostAndroidActivity.unbindService(bluetoothBinding);
 			hostAndroidActivity.unregisterReceiver(readBroadcastReceiver);
 			hostAndroidActivity.unregisterReceiver(onBluetoothConnectedReceiver);
+			
 			disconnectCalled = true; 
 		}
 			
@@ -267,6 +248,7 @@ public class SamsungBleStack extends BluetoothLEStack{
 	
 	private Runnable connectionRequestor = new Runnable(){
 			public void run() {
+				if (!disconnectCalled){
 				try {
 				
 				int p = bluetoothLEService.getProfileState();
@@ -289,9 +271,9 @@ public class SamsungBleStack extends BluetoothLEStack{
 				asyncRequestor.postDelayed(this, 3000L);
 				} catch (Exception e){
 					Log.e(logTag, "Samsung BLE Stack failed to call hidden method.");
-					Log.e(logTag, e.getMessage());
+					Log.e(logTag, ""+e);
 				}
-				}
+				}}
 				
 	};
 	
@@ -311,42 +293,27 @@ public class SamsungBleStack extends BluetoothLEStack{
 		}
 	};
 	
-	private Runnable continuousCharRequest = new Runnable() {
-		public void run() {
-			if (connectedDevice != null && disconnectCalled == false){
-				
-				if (bleSemaphore == 0){
-					bleSemaphore += 1;
-					//Async call- results when returned from BT will be handled by readBroadcastReceiver
-					bluetoothLEService.discoverCharacteristics(connectedDevice);
-				}
-				asyncRequestor.postDelayed(continuousCharRequest, 3000L); //Regardless of whether we wait or repost, try again in 3 seconds.
-			} else {
-				stopDiscoveringCharacteristics(); // Stop our own thread if we disconnect
-			}
-			
-		}
-	};
+	
 
-	void startReadingRSSI() {
+	public void startReadingRSSI() {
 		continuousRSSIrequest.run();
 	}
 
-	void stopReadingRSSI() {
+	public void stopReadingRSSI() {
 		asyncRequestor.removeCallbacks(continuousRSSIrequest);
 	}
 
-	private void startDiscoveringCharacteristics() {
-		continuousCharRequest.run();
-		
-	}
-	private void stopDiscoveringCharacteristics() {
-		asyncRequestor.removeCallbacks(continuousCharRequest);
-		
+	public Integer getLatestRSSI(){
+		return latestRSSIValue;
 	}
 	
-	
-	
+	/**Select which discovered characteristic you want to read the latest value from. Updated values are accessible from 
+	 * the function getLatestCharacteristics() **/
+	@Override
+	public void selectCharacteristicToRead(String uuid){
+		presentUUIDtoRead = uuid;
+		bluetoothLEService.discoverCharacteristics(connectedDevice, uuid);
+	}
 
 	
 	
@@ -355,8 +322,7 @@ public class SamsungBleStack extends BluetoothLEStack{
 		@Override
 		public void onReceive(Context arg0, Intent intent) {
 			String str = intent.getAction();
-			
-			 if (str.equals(RFDuinoBLEProfile.DEVICE_RSSI_VAL)) {
+			if (str.equals(BluetoothLEStack.DEVICE_RSSI_VAL)) {
 				 bleSemaphore -= 1;
 					
 				BluetoothDevice localDevice = (BluetoothDevice) intent
@@ -368,33 +334,87 @@ public class SamsungBleStack extends BluetoothLEStack{
 					latestRSSIValue = Integer.valueOf(rssiStr).intValue();
 					
 				}
-			} else {
-				Log.i(logTag, "OnReceive did not handle event:"+ str);
-			}
-			/* if(str.equals(RFDuinoBLEProfile.ACC_VALUE_REFRESH)){
-				MainActivity.this.xVal = intent.getFloatExtra("X", 0.0f);
-				MainActivity.this.yVal = intent.getFloatExtra("Y", 0.0f);
-				MainActivity.this.zVal = intent.getFloatExtra("Z", 0.0f);
-				
-				runOnUiThread(new Runnable(){
-					public void run(){
-						MainActivity.this.setACCText();
+			} else if (str.equals(BluetoothLEStack.CHARACTERISTICS_REFRESH)) {
+				bleSemaphore -= 1;
+				BluetoothDevice localDevice = (BluetoothDevice) intent
+						.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+				if (connectedDevice != null && localDevice != null
+						&& connectedDevice.equals(localDevice)) {
+					
+					//Update our available services by UUID:
+					ArrayList<String> uuids = new ArrayList<String>();
+					for (BluetoothLEClientChar c : bluetoothLEService.getAllChars(connectedDevice)){
+						uuids.add(c.getCharUUID());
 					}
-				});
-			}*/
+					allowedUUIDs =  uuids;	
+					
+					//Update our available values if we aren't reading something specific:
+					if (presentUUIDtoRead == null){
+						for (BluetoothLEClientChar c : bluetoothLEService.getAllChars(connectedDevice)){
+							uuidsTolatestValues.put(c.getCharUUID(), c);
+						}
+					} else { //only update the one we're reading:
+						uuidsTolatestValues.put(presentUUIDtoRead, bluetoothLEService.getCharbyUUID(connectedDevice, presentUUIDtoRead));
+					}
+				}	
+				
+			} 
 		}
-
-		
 	};
 
+	
+	/*private void write(int index)
+	{
+		String uuid128 = indexToUuid128(index);
+
+		try
+		{
+			BluetoothLEClientChar c = bluetoothLEService.getCharbyUUID(bluetoothLEService.connectedDevice, uuid128);
+
+			if(c == null)
+			{
+				Toast.makeText(getActivity(), NULL_CHAR_MESSAGE, Toast.LENGTH_LONG).show();
+				return;
+			}
+
+			int value = Integer.parseInt(values[index].getText().toString());
+			byte data[] = new byte[1];
+			data[0] = (byte) value;
+			c.setCharValue(data);
+			bluetoothLEService.writeCharValue(c, 1);
+		}
+		catch(NumberFormatException e)
+		{
+			// just ignore it.
+		}
+	}*/
+	
+	
+	
+	
+	
+
 	@Override
-	public void readBLECharacteristic(String UUID) {
-		// TODO Auto-generated method stub
-		
+	public boolean discoverAvailableCharacteristics() {
+		if (successfulConnection){
+			bleSemaphore +=1;
+			bluetoothLEService.discoverCharacteristics(connectedDevice);
+			return true;
+		} else {
+			return false;
+		}
 	}
 
-	private static Class samsungBluetoothAdapterClass;
-	private static Class samsungBluetoothDeviceClass;
+	
+
+	@Override
+	public Integer getLatestRSSIValue() {
+		return latestRSSIValue;
+	}
+	
+
+	private static Class<?> samsungBluetoothAdapterClass;
+	private static Class<?> samsungBluetoothDeviceClass;
 	
 	
 	
@@ -449,6 +469,6 @@ public class SamsungBleStack extends BluetoothLEStack{
 		}
 		return null;
 	}
-	
+
 }
 

@@ -1,5 +1,7 @@
 package com.rfduino.core;
 
+import java.util.ArrayList;
+
 import com.samsung.bluetoothle.BluetoothLEClientChar;
 import com.samsung.bluetoothle.BluetoothLEClientService;
 
@@ -12,8 +14,7 @@ import android.os.IBinder;
 
 
 public class SimpleBlePeripheralService extends Service {
-
-	private static final String TAG = "ECGAndroidService";
+	
 	private final IBinder mBinder = new ServiceBinder();
 	private RFDuinoBLEProfile mBluetoothProfile = null;
 
@@ -29,7 +30,13 @@ public class SimpleBlePeripheralService extends Service {
 	}
 
 	public void onCreate() {
-		mBluetoothProfile = new RFDuinoBLEProfile(getBaseContext());
+		ArrayList<BluetoothLEClientService> potentialRfduinoServices = new ArrayList<BluetoothLEClientService>();
+		potentialRfduinoServices.add(new RFDuinoBLEService(RFDuinoSystemCharacteristics.BLE_GENERIC_ACCESS_PROFILE_UUID));
+		potentialRfduinoServices.add(new RFDuinoBLEService(RFDuinoSystemCharacteristics.BLE_GENERIC_ATTRIBUTE_PROFILE_UUID));
+		potentialRfduinoServices.add(new RFDuinoBLEService(RFDuinoSystemCharacteristics.RFDUINO_PROFILE_SERVICE_UUID));
+		
+		
+		mBluetoothProfile = new RFDuinoBLEProfile(getBaseContext(), potentialRfduinoServices );
 		startForeground(999, new Notification());
 	}
 
@@ -47,18 +54,19 @@ public class SimpleBlePeripheralService extends Service {
 	public void disconnectLEDevice(BluetoothDevice paramBluetoothDevice) {
 		if (mBluetoothProfile != null)
 			mBluetoothProfile.disconnectLEDevice(paramBluetoothDevice);
+			mBluetoothProfile.finish();
 	}
 
 	public void discoverCharacteristics(BluetoothDevice paramBluetoothDevice) {
 		mBluetoothProfile.discoverCharacteristics(paramBluetoothDevice);
 	}
 
-	
-
-	public void initializeProfileByUUID(BluetoothDevice paramBluetoothDevice, String UUID){
-		mBluetoothProfile.initializeProfileByUUID(paramBluetoothDevice, UUID);
+	public void discoverCharacteristics(BluetoothDevice paramBluetoothDevice,
+			String uuid) {
+		mBluetoothProfile.discoverCharacteristics(paramBluetoothDevice, uuid);
 		
 	}
+
 	
 	
 	public void setRemoteDevice(BluetoothDevice paramBluetoothDevice) {
@@ -76,9 +84,17 @@ public class SimpleBlePeripheralService extends Service {
 	public void getRssiValue(BluetoothDevice paramBluetoothDevice) {
 		mBluetoothProfile.getRssiValue(paramBluetoothDevice);
 	}
-	/*
-	 * 
-	public void startECGRecording(BluetoothDevice device, int startFlag){
-		mBluetoothProfile.startECGRecording(device, startFlag);	
-	}*/
+
+	public BluetoothLEClientChar getCharbyUUID(BluetoothDevice device, String uuid)
+	{
+		return mBluetoothProfile.getCharbyUUID(device, uuid);
+	}
+
+	public ArrayList<BluetoothLEClientChar> getAllChars(BluetoothDevice device)
+	{
+		return mBluetoothProfile.getAllChars(device);
+	}
+
+	
+
 }
