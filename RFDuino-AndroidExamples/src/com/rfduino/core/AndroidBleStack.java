@@ -112,5 +112,12 @@ public class AndroidBleStack extends BluetoothLEStack{
 		
 	}
 
+
+	@Override
+	public boolean writeCharacteristic(String uuid, byte[] value) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
 	
 }

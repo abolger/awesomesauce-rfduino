@@ -15,17 +15,25 @@ import com.samsung.bluetoothle.BluetoothLEClientService;
 
 public class RFDuinoBLEProfile extends BluetoothLEClientProfile {
 	private final String logTag = "RFDuinoBLEProfile";
-	private ArrayList<BluetoothLEClientService> eServices = null;
+	private BluetoothLEClientService rfduinoService = null;
+	
+	
 	//private ACCService aService = null;
 	private Context mContext;
 
 	
 
-	public RFDuinoBLEProfile(Context baseContext, ArrayList<BluetoothLEClientService> desiredServices) {
+	public RFDuinoBLEProfile(Context baseContext) {
 		super(baseContext);
 		this.mContext = baseContext;
-		eServices = desiredServices; 
-		registerLEProfile(eServices);
+		ArrayList<BluetoothLEClientService> potentialRfduinoServices = new ArrayList<BluetoothLEClientService>();
+		rfduinoService = new RFDuinoBLEService(RFDuinoSystemCharacteristics.RFDUINO_PROFILE_SERVICE_UUID);
+		
+		potentialRfduinoServices.add (rfduinoService);
+		
+		registerLEProfile(potentialRfduinoServices);
+		
+		
 	}
 
 	public void unregister() {
@@ -91,10 +99,9 @@ public class RFDuinoBLEProfile extends BluetoothLEClientProfile {
 
 	public BluetoothLEClientChar getCharbyUUID(BluetoothDevice device, String uuid)
 	{
-		for (BluetoothLEClientService service: eServices){
-			BluetoothLEClientChar c = service.getCharbyUUID(device, uuid);
-			if (c != null) return c;
-		}
+		BluetoothLEClientChar c = rfduinoService.getCharbyUUID(device, uuid);
+		if (c != null) return c;
+		
 		return null; //No such characteristic UUID available. 
 	}
 	
@@ -102,24 +109,29 @@ public class RFDuinoBLEProfile extends BluetoothLEClientProfile {
 	public ArrayList<BluetoothLEClientChar> getAllChars(BluetoothDevice device)
 	{
 		ArrayList<BluetoothLEClientChar> all= new ArrayList<BluetoothLEClientChar>();
-		for (BluetoothLEClientService service: eServices){
-			List<BluetoothLEClientChar> chars = service.getAllChars(device);
-			if (chars != null){	all.addAll(chars); } 
-		}
-
+		
+		List<BluetoothLEClientChar> chars = rfduinoService.getAllChars(device);
+		if (chars != null){	all.addAll(chars); } 
+		
+		
 		return all;
 	}
 
 	public void discoverCharacteristics(BluetoothDevice paramBluetoothDevice,
 			String uuid) {
-		
-		for (BluetoothLEClientService service: eServices){
-			service.discoverCharacteristics(paramBluetoothDevice, uuid);
-		}
-			
+		rfduinoService.discoverCharacteristics(paramBluetoothDevice, uuid);
 		
 	}
 
+	/*
+	 * paramInt == 1 means WRITE_REQ. 
+	 * fill in the data to be written in paramBluetoothLEClientChar.setCharValue(byte[] bytes)
+	 */
+	public int writeCharValue(BluetoothLEClientChar paramBluetoothLEClientChar, int paramInt)
+	{
+		return rfduinoService.writeCharValue(paramBluetoothLEClientChar,paramInt);
+	}
+	
 	
 	
 	 

@@ -338,6 +338,20 @@ public class SamsungBleStack extends BluetoothLEStack{
 		bluetoothLEService.discoverCharacteristics(connectedDevice, uuid);
 	}
 
+	@Override
+	public boolean writeCharacteristic(String uuid, byte[] value) {
+		presentUUIDtoWrite = uuid;
+		BluetoothLEClientChar c = bluetoothLEService.getCharbyUUID(connectedDevice, uuid);
+		if(c == null)
+		{
+			return false;
+		} else {
+			c.setCharValue(value);
+			bluetoothLEService.writeCharValue(c, 1);
+			return true;
+		}
+	}
+	
 	
 	
 	private final BroadcastReceiver readBroadcastReceiver = new BroadcastReceiver() {
@@ -492,6 +506,8 @@ public class SamsungBleStack extends BluetoothLEStack{
 		}
 		return null;
 	}
+
+	
 
 
 	

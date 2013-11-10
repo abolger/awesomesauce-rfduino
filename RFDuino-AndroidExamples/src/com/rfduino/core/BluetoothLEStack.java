@@ -75,6 +75,7 @@ public abstract class BluetoothLEStack {
 	protected HashMap<String, Object> uuidsTolatestValues = new HashMap<String, Object>();
 	protected List<String> allowedUUIDs;
 	protected String presentUUIDtoRead;
+	protected String presentUUIDtoWrite;
 	
 	
 	
@@ -202,6 +203,10 @@ public abstract class BluetoothLEStack {
 	}
 	
 	public abstract void selectCharacteristicToRead(String UUID);
+	
+	/** Returns true if write was successful, false if write failed. **/
+	public abstract boolean writeCharacteristic(String uuid, byte[] value);
+	
 	
 	public Map<String, Object> getLatestCharacteristics(){
 		return uuidsTolatestValues;

@@ -38,8 +38,7 @@ public class LedButtonExample extends Activity {
 	
 	
 	/**
-	 * Creates our main layout for this page (checkbox), starts searching for bluetooth devices, and shows a list of 
-	 *  available bluetooth devices.
+	 * Creates our main layout for this page (checkbox)
 	 */
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -48,7 +47,6 @@ public class LedButtonExample extends Activity {
 		
 		//Get the bluetooth device that we put here: this comes from right before we started this activity on the "ListAllExamples.java" screen. 
 		chosenBluetoothDevice = (BluetoothDevice) getIntent().getExtras().get("bluetooth_device");
-		Log.i(BluetoothLEStack.logTag, "Chosen device is"+ chosenBluetoothDevice);
 		
 		rfduinoConnection = BluetoothLEStack.connectToBluetoothLEStack(chosenBluetoothDevice, 
 				this,
@@ -78,12 +76,6 @@ public class LedButtonExample extends Activity {
 		super.onResume();
 	}
 	
-	@Override
-	public boolean onCreateOptionsMenu(Menu menu) {
-		// Inflate the menu; this adds items to the action bar if it is present.
-		getMenuInflater().inflate(R.menu.activity_led_blink_example, menu);
-		return true;
-	}
 
 	public void onLedCheckboxClicked(View view){
 		

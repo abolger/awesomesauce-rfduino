@@ -30,6 +30,10 @@
             android:name="com.rfduino.examples.LedButtonExample"
             android:label="@string/title_activity_led_blink_example" >
         </activity>
+        <activity
+            android:name="com.rfduino.examples.ColorWheelExample"
+            android:label="@string/title_activity_color_wheel_example" >
+        </activity>
         
          <service android:name=".core.SimpleBlePeripheralService" >
         </service>

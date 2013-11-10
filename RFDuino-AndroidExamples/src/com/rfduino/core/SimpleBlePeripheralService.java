@@ -66,13 +66,7 @@ public class SimpleBlePeripheralService extends Service {
 	
 	
 	public void setRemoteDevice(BluetoothDevice paramBluetoothDevice) {
-		ArrayList<BluetoothLEClientService> potentialRfduinoServices = new ArrayList<BluetoothLEClientService>();
-		potentialRfduinoServices.add(new RFDuinoBLEService(RFDuinoSystemCharacteristics.BLE_GENERIC_ACCESS_PROFILE_UUID));
-		potentialRfduinoServices.add(new RFDuinoBLEService(RFDuinoSystemCharacteristics.BLE_GENERIC_ATTRIBUTE_PROFILE_UUID));
-		potentialRfduinoServices.add(new RFDuinoBLEService(RFDuinoSystemCharacteristics.RFDUINO_PROFILE_SERVICE_UUID));
-		
-		//Create a new profile each time we connect, and destroy old profiles when we disconnect. 
-		mBluetoothProfile = new RFDuinoBLEProfile(getBaseContext(), potentialRfduinoServices );
+		mBluetoothProfile = new RFDuinoBLEProfile(getBaseContext());
 		
 		mBluetoothProfile.setRemoteDevice(paramBluetoothDevice);
 	}
@@ -99,6 +93,17 @@ public class SimpleBlePeripheralService extends Service {
 		return mBluetoothProfile.getAllChars(device);
 	}
 
+	/*
+	 * paramInt == 1 means WRITE_REQ. 
+	 * fill in the data to be written in paramBluetoothLEClientChar.setCharValue(byte[] bytes)
+	 */
+	public int writeCharValue(BluetoothLEClientChar paramBluetoothLEClientChar, int paramInt)
+	{
+		return mBluetoothProfile.writeCharValue(paramBluetoothLEClientChar, paramInt);
+	}
+
+
+	
 	
 
 }
