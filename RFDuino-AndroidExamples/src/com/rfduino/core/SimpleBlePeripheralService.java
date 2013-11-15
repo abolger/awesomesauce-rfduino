@@ -12,7 +12,17 @@ import android.content.Intent;
 import android.os.Binder;
 import android.os.IBinder;
 
-
+/** 
+ * SimpleBlePeripheralService.java
+ * 
+ * This Service, once bound, runs in the background of the application and connects the application with the Android hardware 
+ * BluetoothLEProfile. 
+ *
+ * @author adrienne
+ *
+ * This library is released under the LGPL. A copy of the license should have been distributed with this library/source code,
+ *  if not, you can read it here: (https://github.com/abolger/awesomesauce-rfduino/blob/master/LICENSE)
+*/
 public class SimpleBlePeripheralService extends Service {
 	
 	private final IBinder mBinder = new ServiceBinder();

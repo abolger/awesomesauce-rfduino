@@ -1,7 +1,5 @@
 package com.rfduino.core;
 
-import com.samsung.bluetoothle.BluetoothLEClientChar;
-
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
@@ -9,11 +7,18 @@ import android.bluetooth.BluetoothDevice;
 import android.content.Context;
 import android.os.Build;
 
-/** Class that holds all the standard Bluetooth SDK functions that became available with Android 4.3.
- *  These functions will get called from the RFDuinoBluetooth class if the Android device is running Android 4.3 or later.
+/** 
+ * 
+ * AndroidBleStack.java
+ * 
+ *  Implementation of BluetoothLEStack for when the Android device is running Android 4.3 or later.
+ *  This implementation relies on the standard Bluetooth SDK functions that became available with Android 4.3. (JELLY BEAN, MR2)
  *  
- **/
-
+ * @author adrienne
+ *
+ * This library is released under the LGPL. A copy of the license should have been distributed with this library/source code,
+ *  if not, you can read it here: (https://github.com/abolger/awesomesauce-rfduino/blob/master/LICENSE)
+*/
 @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR2)
 public class AndroidBleStack extends BluetoothLEStack{
 	public static BluetoothAdapter.LeScanCallback onBluetoothFoundCallback = new BluetoothAdapter.LeScanCallback() {

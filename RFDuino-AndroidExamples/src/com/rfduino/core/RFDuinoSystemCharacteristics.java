@@ -3,7 +3,15 @@ package com.rfduino.core;
 import android.bluetooth.BluetoothGatt;
 
 import com.samsung.bluetoothle.BluetoothLENamespace;
-
+/** RFDuinoSystemCharacteristics.java
+ * 
+ * List of UUIDs used by RFDuino devices to send and recieve BluetoothLE data. 
+ * 
+ * @author adrienne
+ * 
+ * This library is released under the LGPL. A copy of the license should have been distributed with this library/source code,
+ * if not, you can read it here: (https://github.com/abolger/awesomesauce-rfduino/blob/master/LICENSE)
+*/
 public class RFDuinoSystemCharacteristics {
 	//16 bit UUID custom RFDuino fields are turned into standard 128bit fields by following Bluetooth Base ID according to the BLE standard: 00000000-0000-1000-8000 00805F9B34FB
 	

@@ -29,19 +29,21 @@ import android.os.IBinder;
 import android.os.ParcelUuid;
 import android.util.Log;
 
-/** This class stores all the code that needed to be implemented to use the hidden Bluetooth Low Energy API that is available starting
- * in some devices as early as Android 4.1, but isn't needed at all for Android 4.3.
+/** 
+ * SamsungBleStack.java
+ * 
+ * This class stores all the code that needed to be implemented to use the hidden Bluetooth Low Energy API that is available starting
+ * in some Samsung Android devices as early as Android 4.1. This class is completely unnecessary if your Android platform is running Android 4.3 or later.
  * This class draws heavily from example code available as a published sample application from TI's Help and Support website here:
  *  	http://e2e.ti.com/support/low_power_rf/f/538/p/240097/879328.aspx
  * and on extracted source code from Samsung's BLE SDK.  It has been tested with the Samsung Galaxy S3 running Android 4.1.2.
  * 
  * @author adrienne
  *
- */
-
-
-
-public class SamsungBleStack extends BluetoothLEStack{
+ * This library is released under the LGPL. A copy of the license should have been distributed with this library/source code,
+ *  if not, you can read it here: (https://github.com/abolger/awesomesauce-rfduino/blob/master/LICENSE)
+*/
+ public class SamsungBleStack extends BluetoothLEStack{
 	private SimpleBlePeripheralService bluetoothLEService;
 	private ServiceConnection bluetoothBinding; 
 	

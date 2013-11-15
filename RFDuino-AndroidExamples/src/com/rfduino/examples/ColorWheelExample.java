@@ -1,32 +1,31 @@
 package com.rfduino.examples;
 
-import java.util.List;
-import java.util.Map;
 
+
+import java.util.List;
 import net.yougli.shakethemall.ColorPickerDialog;
 import net.yougli.shakethemall.ColorPickerDialog.OnColorChangedListener;
 
-import com.rfduino.R;
 import com.rfduino.core.BluetoothLEStack;
 import com.rfduino.core.RFDuinoSystemCharacteristics;
-import com.rfduino.examples.callbacks.LedButtonCallback;
-import com.samsung.bluetoothle.BluetoothLEClientChar;
-
 import android.os.Bundle;
 import android.os.Handler;
 import android.app.Activity;
-import android.app.AlertDialog;
-import android.app.ProgressDialog;
 import android.bluetooth.BluetoothDevice;
 import android.content.DialogInterface;
 import android.content.DialogInterface.OnCancelListener;
 import android.graphics.Color;
 import android.util.Log;
-import android.view.Menu;
-import android.view.View;
-import android.widget.ArrayAdapter;
-import android.widget.CheckBox;
-import android.widget.Toast;
+
+/** ColorWheelExample.java
+ * This example Activity is designed to be run with a RFDuino board that has had the "RFDuinoBLE>ColorWheel" sketch loaded onto
+ * it.  See https://github.com/abolger/awesomesauce-rfduino/wiki/Getting%20Started for more details. 
+ * 
+ * @author adrienne
+ * 
+ * This library is released under the LGPL. A copy of the license should have been distributed with this library/source code,
+ *  if not, you can read it here: (https://github.com/abolger/awesomesauce-rfduino/blob/master/LICENSE)
+*/
 
 public class ColorWheelExample extends Activity {
 	BluetoothLEStack rfduinoConnection;

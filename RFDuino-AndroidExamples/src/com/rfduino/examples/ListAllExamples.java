@@ -2,8 +2,6 @@ package com.rfduino.examples;
 
 import com.rfduino.R;
 import com.rfduino.core.BluetoothLEStack;
-import com.rfduino.examples.callbacks.LedButtonCallback;
-
 import android.util.Log;
 import android.view.View;
 import android.app.AlertDialog;
@@ -15,6 +13,20 @@ import android.os.Bundle;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
+/** 
+ * ListAllExamples.java
+ * 
+ * This Activity:
+ * 1.  loads a list of all possible example Activities for use with an RFDuino board and displays them in a clickable format
+ * 2. Allows the user to select an Activity via a listElementListener.
+ * 3. Performs a Bluetooth Low Energy device scan and displays available Bluetooth devices that can be used with the Activity
+ * 4. Stores the selected BluetoothDevice as an "Extra" to pass to the new Activity's "onCreate" method when it is initialized.
+ *   
+ * @author adrienne
+ * 
+ * This library is released under the LGPL. A copy of the license should have been distributed with this library/source code,
+ *  if not, you can read it here: (https://github.com/abolger/awesomesauce-rfduino/blob/master/LICENSE)
+*/
 
 public class ListAllExamples extends ListActivity {
 

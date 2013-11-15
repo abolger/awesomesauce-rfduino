@@ -48,6 +48,20 @@ import android.os.Handler;
 import android.util.Log;
 import android.widget.ArrayAdapter;
 
+/** 
+ * 
+ * BluetoothLEStack.java
+ * 
+ *  Provide Simplified Android bindings to link an RFDuino Board to an Android application over Bluetooth. 
+ *  This stack supports the following devices:
+ *  1. Any Android device that has the Bluetooth LE hardware AND is running Android 4.3+. (JELLY BEAN, MR2)
+ *  2. Samsung Android 4.1+ devices that come equipped with a Bluetooth LE hardware. 
+ *  
+ * @author adrienne
+ *
+ * This library is released under the LGPL. A copy of the license should have been distributed with this library/source code,
+ *  if not, you can read it here: (https://github.com/abolger/awesomesauce-rfduino/blob/master/LICENSE)
+*/
 public abstract class BluetoothLEStack {
 	//String constants
 	public static final String CHARACTERISTICS_REFRESH = "com.rfduino.core.bleprofile.action.refresh";

@@ -1,5 +1,8 @@
 package org.bluetooth;
 
+
+
+
 /*** Constants containing human readable translations of BLE characteristics. Constants derived from
  * Bluetooth SIG adopted standard here
  * 
@@ -7,8 +10,6 @@ package org.bluetooth;
  * @author adrienne
  *
  */
-
-
 public class Characteristic {
 
 public final int  alert_category_id	= 0x2A43;	
