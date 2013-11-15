@@ -3,6 +3,7 @@ package net.yougli.shakethemall;
 /** This contribution comes from the public domain as detailed here: 
  * http://www.yougli.net/android/a-photoshop-like-color-picker-for-your-android-application/ 
  * 
+ * and modified so that the widget view could be scaled instead of staying at a fixed size.
  * 
  */
 
@@ -13,6 +14,7 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.LinearGradient;
 import android.graphics.Paint;
+import android.graphics.Rect;
 import android.graphics.Shader;
 import android.os.Bundle;
 import android.view.MotionEvent;
@@ -29,15 +31,21 @@ public class ColorPickerDialog extends Dialog {
     private int mInitialColor, mDefaultColor;
     private String mKey;
 
+    
 	private static class ColorPickerView extends View {
 		private Paint mPaint;
 		private float mCurrentHue = 0;
 		private int mCurrentX = 0, mCurrentY = 0;
 		private int mCurrentColor, mDefaultColor;
 		private final int[] mHueBarColors = new int[258];
-		private int[] mMainColors = new int[65536];
 		private OnColorChangedListener mListener;
 
+		
+		private Rect hueBar;
+		private Rect shadeBar;
+		private Rect customColorButton;
+		private Rect defaultColorButton;
+		
 		ColorPickerView(Context c, OnColorChangedListener l, int color, int defaultColor) {
 			super(c);
 			mListener = l;
@@ -47,8 +55,7 @@ public class ColorPickerDialog extends Dialog {
 			float[] hsv = new float[3];
 			Color.colorToHSV(color, hsv);
 			mCurrentHue = hsv[0];
-			updateMainColors();
-
+			
 			mCurrentColor = color;
 
 			// Initialize the colors of the hue slider bar
@@ -134,30 +141,12 @@ public class ColorPickerDialog extends Dialog {
 			return Color.RED;
 		}
 
-		// Update the main field colors depending on the current selected hue
-		private void updateMainColors()
-		{
-			int mainColor = getCurrentMainColor();
-			int index = 0;
-			int[] topColors = new int[256];
-			for (int y=0; y<256; y++)
-			{
-				for (int x=0; x<256; x++)
-				{
-					if (y == 0)
-					{
-						mMainColors[index] = Color.rgb(255-(255-Color.red(mainColor))*x/255, 255-(255-Color.green(mainColor))*x/255, 255-(255-Color.blue(mainColor))*x/255);
-						topColors[x] = mMainColors[index];
-					}
-					else
-						mMainColors[index] = Color.rgb((255-y)*Color.red(topColors[x])/255, (255-y)*Color.green(topColors[x])/255, (255-y)*Color.blue(topColors[x])/255);
-					index++;
-				}
-			}
-		}
-
+				
 		@Override
 		protected void onDraw(Canvas canvas) {
+			int bar_width = (canvas.getWidth() - 20)/256; 
+			int bar_height = (int) Math.round(canvas.getHeight()*.3 - 20); 
+			
 			int translatedHue = 255-(int)(mCurrentHue*255/360);
 			// Display all the colors of the hue bar with lines
 			for (int x=0; x<256; x++)
@@ -166,26 +155,44 @@ public class ColorPickerDialog extends Dialog {
 				if (translatedHue != x)
 				{
 					mPaint.setColor(mHueBarColors[x]);
-					mPaint.setStrokeWidth(1);
+					mPaint.setStrokeWidth(bar_width/256 + 2);
 				}
 				else // else display a slightly larger black line
 				{
 					mPaint.setColor(Color.BLACK);
-					mPaint.setStrokeWidth(3);
+					mPaint.setStrokeWidth(bar_width+3);
 				}
-				canvas.drawLine(x+10, 0, x+10, 40, mPaint);
+				canvas.drawLine(x*bar_width+10, 10, x*bar_width+10, 10+bar_height, mPaint);
 			}
-
-			// Display the main field colors using LinearGradient
+			
+			//Use this as reference point for touching colors:
+			if (hueBar == null) hueBar = new Rect(10, 10, 255*bar_width+10, 10+bar_height); 
+			
+			int main_color_box_height = (int) Math.round(canvas.getHeight()*.5 - 20); 
+			int main_color_box_top_y = (int) Math.round(canvas.getHeight()*.3+10); 
+			int main_color_box_bottom_y = (int) Math.round(canvas.getHeight()*.8 - 10); 
+						
+			int button_row_height = (int) Math.round(canvas.getHeight()*.2 - 20);
+			int button_row_top_y = main_color_box_bottom_y + 20;
+			int button_row_bottom_y = button_row_top_y + button_row_height;
+			
+			
+			
+			// Display all main field colors using LinearGradient
 			for (int x=0; x<256; x++)
 			{
 				int[] colors = new int[2];
-				colors[0] = mMainColors[x];
-				colors[1] = Color.BLACK;
-				Shader shader = new LinearGradient(0, 50, 0, 306, colors, null, Shader.TileMode.REPEAT);
+				colors[0] = Color.HSVToColor(new float[]{mCurrentHue, 0, x/256.0f});
+				colors[1] = Color.HSVToColor(new float[]{mCurrentHue, 1, x/256.0f});
+				Shader shader = new LinearGradient(x*bar_width+10, main_color_box_top_y, x*bar_width+10, main_color_box_bottom_y, colors, null, Shader.TileMode.REPEAT);
 				mPaint.setShader(shader);
-				canvas.drawLine(x+10, 50, x+10, 306, mPaint);
+				canvas.drawLine(x*bar_width+10, main_color_box_top_y, x*bar_width+10, main_color_box_bottom_y,  mPaint);
 			}
+			
+			//Use this as reference point for touching colors.
+			if (shadeBar == null) shadeBar = new Rect(10, main_color_box_top_y, 255*bar_width+10, main_color_box_bottom_y); 
+			
+			
 			mPaint.setShader(null);
 
 			// Display the circle around the currently selected color in the main field
@@ -199,81 +206,82 @@ public class ColorPickerDialog extends Dialog {
 			// Draw a 'button' with the currently selected color
 			mPaint.setStyle(Paint.Style.FILL);
 			mPaint.setColor(mCurrentColor);
-			canvas.drawRect(10, 316, 138, 356, mPaint);
+			customColorButton = new Rect(10, button_row_top_y, canvas.getWidth()/2 -10 , button_row_bottom_y);
+			canvas.drawRect(customColorButton, mPaint);
 
 			// Set the text color according to the brightness of the color
 			if (Color.red(mCurrentColor)+Color.green(mCurrentColor)+Color.blue(mCurrentColor) < 384)
 				mPaint.setColor(Color.WHITE);
 			else
 				mPaint.setColor(Color.BLACK);
-			canvas.drawText(getResources().getString(R.string.settings_bg_color_confirm), 74, 340, mPaint);
+			
+			int custom_buttom_center = canvas.getWidth()/4;
+			canvas.drawText(getResources().getString(R.string.settings_bg_color_confirm), custom_buttom_center, (button_row_top_y + button_row_bottom_y)/2, mPaint);
 
 			// Draw a 'button' with the default color
 			mPaint.setStyle(Paint.Style.FILL);
 			mPaint.setColor(mDefaultColor);
-			canvas.drawRect(138, 316, 266, 356, mPaint);
-
+			defaultColorButton = new Rect(canvas.getWidth()/2 + 10, button_row_top_y, canvas.getWidth() - 10, button_row_bottom_y);
+			canvas.drawRect(defaultColorButton, mPaint);
+			int default_button_center = (canvas.getWidth()/2 + canvas.getWidth() - 10)/2;
+			
 			// Set the text color according to the brightness of the color
 			if (Color.red(mDefaultColor)+Color.green(mDefaultColor)+Color.blue(mDefaultColor) < 384)
 				mPaint.setColor(Color.WHITE);
 			else
 				mPaint.setColor(Color.BLACK);
-			canvas.drawText(getResources().getString(R.string.settings_default_color_confirm), 202, 340, mPaint);
+			canvas.drawText(getResources().getString(R.string.settings_default_color_confirm), default_button_center,  (button_row_top_y + button_row_bottom_y)/2, mPaint);
 		}
 
 		@Override
 		protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-			setMeasuredDimension(276, 366);
+			
+			setMeasuredDimension(widthMeasureSpec, heightMeasureSpec);
 		}
 
 		@Override
 		public boolean onTouchEvent(MotionEvent event) {
 			if (event.getAction() != MotionEvent.ACTION_DOWN) return true;
-			float x = event.getX();
-			float y = event.getY();
+			int x = (int) event.getX();
+			int y = (int) event.getY();
 
 			// If the touch event is located in the hue bar
-			if (x > 10 && x < 266 && y > 0 && y < 40)
+			if (hueBar.contains(x, y))
 			{
+				int h = Math.round((x - hueBar.left)*255.0f/hueBar.width()); //figure out where on the bar we are color-wise
 				// Update the main field colors
-				mCurrentHue = (255-x)*360/255;
-				updateMainColors();
-
-				// Update the current selected color
-				int transX = mCurrentX-10;
-				int transY = mCurrentY-60;
-				int index = 256*(transY-1)+transX;
-				if (index > 0 && index < mMainColors.length)
-					mCurrentColor = mMainColors[256*(transY-1)+transX];
-
+				mCurrentHue = (255-h)*360/255;
+				float [] hsv = {0, 0,0};
+				Color.colorToHSV(mCurrentColor, hsv);
+				hsv[0] = mCurrentHue; //override with the newly selected hue
+				mCurrentColor = Color.HSVToColor(hsv);
+				
 				// Force the redraw of the dialog
 				invalidate();
 			}
 
 			// If the touch event is located in the main field
-			if (x > 10 && x < 266 && y > 50 && y < 306)
+			if (shadeBar.contains(x,y))
 			{
 				mCurrentX = (int) x;
 				mCurrentY = (int) y;
-				int transX = mCurrentX-10;
-				int transY = mCurrentY-60;
-				int index = 256*(transY-1)+transX;
-				if (index > 0 && index < mMainColors.length)
-				{
-					// Update the current color
-					mCurrentColor = mMainColors[index];
-					// Force the redraw of the dialog
-					invalidate();
-				}
+				// Update the current selected color using HSV of existing color to get it right:
+				float xValue = 256* Math.round(((float)(mCurrentX - shadeBar.left))/shadeBar.width());
+				float ySaturation = ((float) (mCurrentY - shadeBar.top))/shadeBar.height();
+				mCurrentColor = Color.HSVToColor(new float[]{mCurrentHue, ySaturation, xValue});
+				
+				// Force the redraw of the dialog
+				invalidate();
+				
 			}
 
 			// If the touch event is located in the left button, notify the listener with the current color
-			if (x > 10 && x < 138 && y > 316 && y < 356)
+			if (customColorButton.contains(x,y))
 				mListener.colorChanged("", mCurrentColor);
 
 			// If the touch event is located in the right button, notify the listener with the default color
-			if (x > 138 && x < 266 && y > 316 && y < 356)
-				mListener.colorChanged("", mDefaultColor);
+			if (defaultColorButton.contains(x,y))
+					mListener.colorChanged("", mDefaultColor);
 
 			return true;
 		}

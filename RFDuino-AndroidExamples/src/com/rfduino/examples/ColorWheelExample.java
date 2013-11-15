@@ -50,7 +50,9 @@ public class ColorWheelExample extends Activity {
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		setContentView(R.layout.activity_color_wheel_example);
+		colorPicker = new ColorPickerDialog(this,onColorSelected, "chosen_led_color" , Color.RED, Color.BLUE); 
+		
+		colorPicker.show();
 		
 		//Get the bluetooth device that we put here: this comes from right before we started this activity on the "ListAllExamples.java" screen. 
 		chosenBluetoothDevice = (BluetoothDevice) getIntent().getExtras().get("bluetooth_device");
@@ -65,7 +67,6 @@ public class ColorWheelExample extends Activity {
 
 		
 		
-		colorPicker = new ColorPickerDialog(this,onColorSelected, "chosen_led_color" , Color.RED, Color.BLUE); 
 		
 		
 		backgroundTask.postDelayed(showColorPicker, 0);
