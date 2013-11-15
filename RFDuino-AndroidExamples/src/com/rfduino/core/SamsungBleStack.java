@@ -390,10 +390,10 @@ import android.util.Log;
 					//Update our available values if we aren't reading something specific:
 					if (presentUUIDtoRead == null){
 						for (BluetoothLEClientChar c : bluetoothLEService.getAllChars(connectedDevice)){
-							uuidsTolatestValues.put(c.getCharUUID(), c);
+							uuidsTolatestValues.put(c.getCharUUID(), c.getCharVaule());
 						}
 					} else { //only update the one we're reading:
-						uuidsTolatestValues.put(presentUUIDtoRead, bluetoothLEService.getCharbyUUID(connectedDevice, presentUUIDtoRead));
+						uuidsTolatestValues.put(presentUUIDtoRead, bluetoothLEService.getCharbyUUID(connectedDevice, presentUUIDtoRead).getCharVaule());
 					}
 				}	
 				

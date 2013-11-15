@@ -86,7 +86,7 @@ public abstract class BluetoothLEStack {
 	protected boolean successfulConnection = false;
 	protected Context hostAndroidActivity;
 	protected BluetoothDevice connectedDevice;
-	protected HashMap<String, Object> uuidsTolatestValues = new HashMap<String, Object>();
+	protected HashMap<String, byte[]> uuidsTolatestValues = new HashMap<String, byte[]>();
 	protected List<String> allowedUUIDs;
 	protected String presentUUIDtoRead;
 	protected String presentUUIDtoWrite;
@@ -222,7 +222,7 @@ public abstract class BluetoothLEStack {
 	public abstract boolean writeCharacteristic(String uuid, byte[] value);
 	
 	
-	public Map<String, Object> getLatestCharacteristics(){
+	public Map<String, byte[]> getLatestCharacteristics(){
 		return uuidsTolatestValues;
 	}
 	

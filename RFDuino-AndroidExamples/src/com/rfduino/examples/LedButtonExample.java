@@ -13,6 +13,9 @@ import android.content.DialogInterface;
 import android.content.DialogInterface.OnCancelListener;
 import android.graphics.Color;
 import android.util.Log;
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
+import android.widget.CompoundButton.OnCheckedChangeListener;
 
 /** 
  * LedButtonExample.java
@@ -28,7 +31,7 @@ import android.util.Log;
 public class LedButtonExample extends Activity {
 	BluetoothLEStack rfduinoConnection;
 	BluetoothDevice chosenBluetoothDevice;
-	int chosenColor = Color.RED;
+	CheckBox checkBox;
 	
 	/** Tell the Bluetooth manager what to do if user decides not to connect anymore. **/
 	OnCancelListener onCancelConnectionAttempt = new OnCancelListener(){
@@ -48,6 +51,21 @@ public class LedButtonExample extends Activity {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_led_blink_example);
 		
+		checkBox = (CheckBox) findViewById(R.id.checkBoxLedBlink);
+		checkBox.setOnCheckedChangeListener(new OnCheckedChangeListener() {
+			
+			@Override
+			public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+				if (isChecked){
+					backgroundTask.post(turnOn);
+				}else {
+					backgroundTask.post(turnOff);
+				}
+				
+			}
+		});
+		
+		
 		//Get the bluetooth device that we put here: this comes from right before we started this activity on the "ListAllExamples.java" screen. 
 		chosenBluetoothDevice = (BluetoothDevice) getIntent().getExtras().get("bluetooth_device");
 		Log.i(BluetoothLEStack.logTag, "Chosen device is"+ chosenBluetoothDevice);
@@ -58,7 +76,8 @@ public class LedButtonExample extends Activity {
 				onCancelConnectionAttempt
 				);
 		
-
+		//rfduinoConnection.selectCharacteristicToRead(RFDuinoSystemCharacteristics.RFDUINO_PROFILE_RECEIVE_UUID); //Make sure we're listening on the right channel
+		
 		backgroundTask.postDelayed(seeIfButtonPressed, 0);
 	}
 	
@@ -69,9 +88,15 @@ public class LedButtonExample extends Activity {
 		if (rfduinoConnection.isConnected()){
 			List<String> availableUUIDs = rfduinoConnection.getDiscoveredCharacteristics();
 			if (availableUUIDs != null && availableUUIDs.contains(RFDuinoSystemCharacteristics.RFDUINO_PROFILE_RECEIVE_UUID)){
-				rfduinoConnection.selectCharacteristicToRead(RFDuinoSystemCharacteristics.RFDUINO_PROFILE_RECEIVE_UUID); //Make sure we're listening on the right channel
-				Object receivedValue = rfduinoConnection.getLatestCharacteristics().get(RFDuinoSystemCharacteristics.RFDUINO_PROFILE_RECEIVE_UUID);
-				Log.i("LedButtonExample", "Received value"+ receivedValue.toString());
+				byte[] receivedValue = rfduinoConnection.getLatestCharacteristics().get(RFDuinoSystemCharacteristics.RFDUINO_PROFILE_RECEIVE_UUID);
+				if (receivedValue[0] == '0'){
+					Log.i("LedButtonExample", "Received 0: Physical Button not pressed.");
+					
+				}	else if (receivedValue[0] == '1'){
+					Log.i("LedButtonExample", "Received 1: Physical Button pressed.");
+				}
+				
+				
 			}
 		}
 			backgroundTask.postDelayed(this, 500l);
@@ -79,6 +104,9 @@ public class LedButtonExample extends Activity {
 		}
 		
 	};
+	
+	
+
 	
 	
 	private Runnable turnOff =  new Runnable(){

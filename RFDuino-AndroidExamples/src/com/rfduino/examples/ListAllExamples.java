@@ -2,9 +2,7 @@ package com.rfduino.examples;
 
 import com.rfduino.R;
 import com.rfduino.core.BluetoothLEStack;
-import android.util.Log;
 import android.view.View;
-import android.app.AlertDialog;
 import android.app.ListActivity;
 import android.bluetooth.BluetoothDevice;
 import android.content.DialogInterface;
