@@ -65,6 +65,7 @@ import android.widget.ArrayAdapter;
 public abstract class BluetoothLEStack {
 	//String constants
 	public static final String CHARACTERISTICS_REFRESH = "com.rfduino.core.bleprofile.action.refresh";
+	
 	public static final String DEVICE_LED_CONNECTED = "com.rfduino.core.bleprofile.action.connected";
 	public static final String DEVICE_DISCONNECTED = "com.rfduino.core.bleprofile.action.disconnected";
 	public static final String DEVICE_LINK_LOSS = "com.rfduino.core.bleprofile.action.linkloss";
@@ -247,6 +248,12 @@ public abstract class BluetoothLEStack {
 
 		return result;
 	}
+
+
+
+
+
+	public abstract void setOnCharacteristicChangedWatcher(String uuid, Runnable callback);
 	
 	
 }

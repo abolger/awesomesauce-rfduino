@@ -124,5 +124,12 @@ public class AndroidBleStack extends BluetoothLEStack{
 		return false;
 	}
 
+
+	@Override
+	public void setOnCharacteristicChangedWatcher(String uuid, Runnable callback) {
+		// TODO Auto-generated method stub
+		
+	}
+
 	
 }

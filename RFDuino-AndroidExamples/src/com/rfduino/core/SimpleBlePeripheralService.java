@@ -63,6 +63,11 @@ public class SimpleBlePeripheralService extends Service {
 		}
 	}
 
+	public void registerCallbackOnCharacteristicChanged(String uuid, Runnable callback){
+		mBluetoothProfile.registerOnCharChangedCallback(uuid, callback);
+		return;
+	}
+	
 	public void discoverCharacteristics(BluetoothDevice paramBluetoothDevice) {
 		mBluetoothProfile.discoverCharacteristics(paramBluetoothDevice);
 	}

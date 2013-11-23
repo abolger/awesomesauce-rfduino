@@ -1,21 +1,24 @@
 package com.rfduino.examples;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import com.rfduino.R;
 import com.rfduino.core.BluetoothLEStack;
 import com.rfduino.core.RFDuinoSystemCharacteristics;
+import com.samsung.bluetoothle.BluetoothLEClientChar;
+
 import android.os.Bundle;
 import android.os.Handler;
 import android.app.Activity;
 import android.bluetooth.BluetoothDevice;
 import android.content.DialogInterface;
 import android.content.DialogInterface.OnCancelListener;
-import android.graphics.Color;
 import android.util.Log;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.CompoundButton.OnCheckedChangeListener;
+import android.widget.TextView;
 
 /** 
  * LedButtonExample.java
@@ -32,6 +35,7 @@ public class LedButtonExample extends Activity {
 	BluetoothLEStack rfduinoConnection;
 	BluetoothDevice chosenBluetoothDevice;
 	CheckBox checkBox;
+	TextView buttonPressEventDisplay;
 	
 	/** Tell the Bluetooth manager what to do if user decides not to connect anymore. **/
 	OnCancelListener onCancelConnectionAttempt = new OnCancelListener(){
@@ -49,9 +53,11 @@ public class LedButtonExample extends Activity {
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		setContentView(R.layout.activity_led_blink_example);
+		setContentView(R.layout.activity_led_toggle_example);
 		
-		checkBox = (CheckBox) findViewById(R.id.checkBoxLedBlink);
+		buttonPressEventDisplay = (TextView) findViewById(R.id.buttonPressNotification);
+		
+		checkBox = (CheckBox) findViewById(R.id.checkBoxLedToggle);
 		checkBox.setOnCheckedChangeListener(new OnCheckedChangeListener() {
 			
 			@Override
@@ -76,31 +82,42 @@ public class LedButtonExample extends Activity {
 				onCancelConnectionAttempt
 				);
 		
-		//rfduinoConnection.selectCharacteristicToRead(RFDuinoSystemCharacteristics.RFDUINO_PROFILE_RECEIVE_UUID); //Make sure we're listening on the right channel
+		backgroundTask.postDelayed(runOnceConnected, 1000l);
 		
-		backgroundTask.postDelayed(seeIfButtonPressed, 0);
 	}
 	
-	Handler backgroundTask = new Handler();
-	private Runnable seeIfButtonPressed = new Runnable(){
+	private Runnable runOnceConnected = new Runnable(){
 		public void run(){
-		//See if we're done connecting. If we are,try to read from the RFDuino's "Receive" service:
 		if (rfduinoConnection.isConnected()){
 			List<String> availableUUIDs = rfduinoConnection.getDiscoveredCharacteristics();
-			if (availableUUIDs != null && availableUUIDs.contains(RFDuinoSystemCharacteristics.RFDUINO_PROFILE_RECEIVE_UUID)){
-				byte[] receivedValue = rfduinoConnection.getLatestCharacteristics().get(RFDuinoSystemCharacteristics.RFDUINO_PROFILE_RECEIVE_UUID);
-				if (receivedValue[0] == '0'){
-					Log.i("LedButtonExample", "Received 0: Physical Button not pressed.");
-					
-				}	else if (receivedValue[0] == '1'){
-					Log.i("LedButtonExample", "Received 1: Physical Button pressed.");
+			if (availableUUIDs != null && availableUUIDs.contains(RFDuinoSystemCharacteristics.RFDUINO_PROFILE_RECEIVE_UUID) ){
+				//Connected and have the service handle. Register a callback to use the service:
+				rfduinoConnection.setOnCharacteristicChangedWatcher(RFDuinoSystemCharacteristics.RFDUINO_PROFILE_RECEIVE_UUID, buttonPressedCallback);
+			} else {
+				rfduinoConnection.discoverAvailableCharacteristics();
+				backgroundTask.postDelayed(this, 1000l);
+			}
+		}else {
+			backgroundTask.postDelayed(this, 1000l);
+		}
+		}
+	};
+	
+	
+	Handler backgroundTask = new Handler();
+	
+	//A slightly ridiculous nested callback that can be passed to our Bluetooth manager:
+	private Runnable buttonPressedCallback = new Runnable(){
+		public void run(){
+			runOnUiThread(new Runnable(){
+				public void run(){
+					Log.i("LedButtonExample", "Button was pressed.");
+					String newText = buttonPressEventDisplay.getText() + "*";
+					buttonPressEventDisplay.setText(newText);
 				}
 				
-				
-			}
-		}
-			backgroundTask.postDelayed(this, 500l);
-		
+			});
+			
 		}
 		
 	};
@@ -136,11 +153,14 @@ public class LedButtonExample extends Activity {
 	};
 	
 	
+	
+	
 	@Override 
 	public void onDestroy(){
-		backgroundTask.removeCallbacks(seeIfButtonPressed);
 		backgroundTask.removeCallbacks(turnOn);
 		backgroundTask.removeCallbacks(turnOff);
+		backgroundTask.removeCallbacks(runOnceConnected);
+		backgroundTask.removeCallbacks(buttonPressedCallback);
 		
 		rfduinoConnection.disconnect();
 		super.onDestroy();

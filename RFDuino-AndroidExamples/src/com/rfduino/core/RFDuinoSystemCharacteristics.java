@@ -25,6 +25,6 @@ public class RFDuinoSystemCharacteristics {
 	public static final String  RFDUINO_PROFILE_RECEIVE_UUID = BluetoothLENamespace.toUuid128StringFormat(0x2221);
 	public static final String  RFDUINO_DISCONNECT_UUID = BluetoothLENamespace.toUuid128StringFormat(0x2223);
 
-	public static final String RFDUINO_TEMPERATURE_CELSIUS_UUID = BluetoothLENamespace.toUuid128StringFormat(0x2a00);
-	
+	public static final String RFDUINO_PROFILE_NOTIFICATION_UUID = BluetoothLENamespace.toUuid128StringFormat(0x2902);
+		
 }

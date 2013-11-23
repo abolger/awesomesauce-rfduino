@@ -5,20 +5,23 @@
 
     <string-array name="example_activities">
         <item>ColorWheelExample</item>
-        <item>ButtonDetectorExample</item>
         <item>LedButtonExample</item>
-        <item>ReadRFDuinoExample</item>
+      <!--  Examples still to implement:
+       <item>ReadRFDuinoExample</item>
         <item>SetClockExample</item>
-        <item>ReadBatteryLevelExample</item>
+        <item>ReadBatteryLevelExample</item> 
+        <item>ProximitySensorExample</item> 
+        
+        -->
     </string-array>
 
     <string name="hello_world">Hello world!</string>
     <string name="menu_settings">Settings</string>
-    <string name="title_activity_led_blink_example">LedBlinkExample</string>
+    <string name="title_activity_led_blink_example">LedButtonExample</string>
 	<string name="title_activity_color_wheel_example">ColorWheelExample</string>
     
-    <string name="click_me_to_turn_on_blinking">Click me to turn on blinking!</string>
-    
+    <string name="click_me_to_turn_on_led">Click me to turn on the LED!</string>
+   
     <string name="settings_bg_color_confirm">Confirm this color?</string>
     <string name="settings_default_color_confirm">Confirm default color?</string>
      <string name="settings_bg_color_dialog">Choose a color!</string>

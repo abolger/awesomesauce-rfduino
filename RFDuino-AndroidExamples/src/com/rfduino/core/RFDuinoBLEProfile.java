@@ -12,6 +12,7 @@ import android.util.Log;
 import com.samsung.bluetoothle.BluetoothLEClientChar;
 import com.samsung.bluetoothle.BluetoothLEClientProfile;
 import com.samsung.bluetoothle.BluetoothLEClientService;
+import com.samsung.bluetoothle.BluetoothLENamespace;
 
 /** 
  * RFDuinoBLEProfile.java
@@ -29,8 +30,9 @@ import com.samsung.bluetoothle.BluetoothLEClientService;
 */
 public class RFDuinoBLEProfile extends BluetoothLEClientProfile {
 	private final String logTag = "RFDuinoBLEProfile";
-	private BluetoothLEClientService rfduinoService = null;
+	private RFDuinoBLEService rfduinoService = null;
 	
+	private boolean watcherRegistered = false;
 	
 	//private ACCService aService = null;
 	private Context mContext;
@@ -47,12 +49,14 @@ public class RFDuinoBLEProfile extends BluetoothLEClientProfile {
 		
 		registerLEProfile(potentialRfduinoServices);
 		
-		
 	}
 
 	public void unregister() {
+		if (watcherRegistered){
+			rfduinoService.unregisterWatcher();
+		}
 		unregisterLEProfile();
-
+		
 	}
 
 	@Override
@@ -74,7 +78,8 @@ public class RFDuinoBLEProfile extends BluetoothLEClientProfile {
 
 		
 	}
-
+	
+	
 	@Override
 	public void onGetRssiValue(BluetoothDevice device, String value) {
 		Intent localIntent = new Intent();
@@ -95,6 +100,7 @@ public class RFDuinoBLEProfile extends BluetoothLEClientProfile {
 
 	@Override
 	public void onLEDeviceDisconnected(BluetoothDevice device) {
+		rfduinoService.unregisterWatcher(); //Tells the service to pay attention when whatever values we happen to be reading change.
 		super.onLEDeviceDisconnected(device);
 		Intent localIntent = new Intent();
 		localIntent.setAction(BluetoothLEStack.DEVICE_DISCONNECTED).putExtra(
@@ -136,6 +142,24 @@ public class RFDuinoBLEProfile extends BluetoothLEClientProfile {
 		rfduinoService.discoverCharacteristics(paramBluetoothDevice, uuid);
 		
 	}
+	
+	public void registerOnCharChangedCallback(String uuid, Runnable callback){
+		if (watcherRegistered){
+			rfduinoService.unregisterWatcher();
+		}
+		rfduinoService.registerWatcher(); //Tells the service to pay attention when whatever values we happen to be reading change.
+		watcherRegistered = true;
+		
+		//Enable this UUID to notify us on change:
+		BluetoothLEClientChar c = getCharbyUUID(getConnectedLEDevice(), uuid);
+		if(c != null){
+			c.setClientConfigDesc(new byte[]{1});
+			int enabled = writeClientConfigDesc(c);
+		}
+		
+		rfduinoService.callbackMap.put(uuid, callback);
+	}
+	
 
 	/*
 	 * paramInt == 1 means WRITE_REQ. 
@@ -144,6 +168,10 @@ public class RFDuinoBLEProfile extends BluetoothLEClientProfile {
 	public int writeCharValue(BluetoothLEClientChar paramBluetoothLEClientChar, int paramInt)
 	{
 		return rfduinoService.writeCharValue(paramBluetoothLEClientChar,paramInt);
+	}
+
+	public int writeClientConfigDesc(BluetoothLEClientChar c) {
+		return  rfduinoService.writeClientConfigDesc(c);
 	}
 	
 	

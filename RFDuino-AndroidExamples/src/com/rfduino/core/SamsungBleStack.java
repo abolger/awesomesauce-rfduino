@@ -1,12 +1,14 @@
 package com.rfduino.core;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.ObjectOutputStream.PutField;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -46,6 +48,8 @@ import android.util.Log;
  public class SamsungBleStack extends BluetoothLEStack{
 	private SimpleBlePeripheralService bluetoothLEService;
 	private ServiceConnection bluetoothBinding; 
+	private HashMap<String, Runnable> desiredCallbacks= new HashMap<String, Runnable>();
+	
 	
 	Integer bleSemaphore = 0; //Only 1 cmd/response pair can be going at once on the Samsung stack, so enforce it with a lock.
 	Integer latestRSSIValue = null;
@@ -235,10 +239,12 @@ import android.util.Log;
 	/** Disconnect from the Bluetooth Device. **/
 	public void disconnect(){
 		if (!disconnectCalled){
+			successfulConnection = false;
 			hostAndroidActivity.unbindService(bluetoothBinding);
 			hostAndroidActivity.unregisterReceiver(readBroadcastReceiver);
 			hostAndroidActivity.unregisterReceiver(onBluetoothConnectedReceiver);
 			disconnectCalled = true; 
+			
 		}
 			
 	}
@@ -279,8 +285,8 @@ import android.util.Log;
 				int p = bluetoothLEService.getProfileState();
 				if (connectedDevice.getBondState() == BluetoothDevice.BOND_NONE) {
 						bluetoothDeviceHiddenApi("createBond", connectedDevice);
-					} 
-					else if (connectedDevice.getBondState() == BluetoothDevice.BOND_BONDED) {
+				} 
+				else if (connectedDevice.getBondState() == BluetoothDevice.BOND_BONDED) {
 						if (p == RFDuinoBLEProfile.GATT_STATE_DISCONNECTED) {
 							bluetoothLEService.connectLEDevice(connectedDevice);
 						}
@@ -337,7 +343,13 @@ import android.util.Log;
 	@Override
 	public void selectCharacteristicToRead(String uuid){
 		presentUUIDtoRead = uuid;
-		bluetoothLEService.discoverCharacteristics(connectedDevice, uuid);
+		if (successfulConnection){ //If we're already connected, discover characteristics now. Otherwise we'll start reading when connection is completed (see connect method)
+			//Async call- results when returned from BT will be handled by readBroadcastReceiver
+			if (bleSemaphore == 0){
+				bleSemaphore += 1;
+				bluetoothLEService.discoverCharacteristics(connectedDevice, presentUUIDtoRead);
+				
+			}}
 	}
 
 	@Override
@@ -353,7 +365,6 @@ import android.util.Log;
 			return true;
 		}
 	}
-	
 	
 	
 	private final BroadcastReceiver readBroadcastReceiver = new BroadcastReceiver() {
@@ -384,52 +395,21 @@ import android.util.Log;
 					ArrayList<String> uuids = new ArrayList<String>();
 					for (BluetoothLEClientChar c : bluetoothLEService.getAllChars(connectedDevice)){
 						uuids.add(c.getCharUUID());
+						
 					}
 					allowedUUIDs =  uuids;	
-					
-					//Update our available values if we aren't reading something specific:
-					if (presentUUIDtoRead == null){
-						for (BluetoothLEClientChar c : bluetoothLEService.getAllChars(connectedDevice)){
+					for (BluetoothLEClientChar c : bluetoothLEService.getAllChars(connectedDevice)){
 							uuidsTolatestValues.put(c.getCharUUID(), c.getCharVaule());
-						}
-					} else { //only update the one we're reading:
-						uuidsTolatestValues.put(presentUUIDtoRead, bluetoothLEService.getCharbyUUID(connectedDevice, presentUUIDtoRead).getCharVaule());
 					}
+					
+					
+					
 				}	
 				
 			} 
 		}
 	};
 
-	
-	/*private void write(int index)
-	{
-		String uuid128 = indexToUuid128(index);
-
-		try
-		{
-			BluetoothLEClientChar c = bluetoothLEService.getCharbyUUID(bluetoothLEService.connectedDevice, uuid128);
-
-			if(c == null)
-			{
-				Toast.makeText(getActivity(), NULL_CHAR_MESSAGE, Toast.LENGTH_LONG).show();
-				return;
-			}
-
-			int value = Integer.parseInt(values[index].getText().toString());
-			byte data[] = new byte[1];
-			data[0] = (byte) value;
-			c.setCharValue(data);
-			bluetoothLEService.writeCharValue(c, 1);
-		}
-		catch(NumberFormatException e)
-		{
-			// just ignore it.
-		}
-	}*/
-	
-	
-	
 	
 	
 
@@ -509,10 +489,11 @@ import android.util.Log;
 		return null;
 	}
 
-	
-
-
-	
+	@Override
+	public void setOnCharacteristicChangedWatcher(String uuid, Runnable callback) {
+		desiredCallbacks.put(uuid, callback);
+		bluetoothLEService.registerCallbackOnCharacteristicChanged(uuid, callback);
+	}
 
 }
 

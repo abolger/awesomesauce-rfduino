@@ -1,5 +1,7 @@
 package com.rfduino.core;
 
+import java.util.HashMap;
+
 import com.samsung.bluetoothle.BluetoothLEClientChar;
 import com.samsung.bluetoothle.BluetoothLEClientService;
 
@@ -18,26 +20,35 @@ import com.samsung.bluetoothle.BluetoothLEClientService;
 */
 public class RFDuinoBLEService extends BluetoothLEClientService {
 	
+	public  HashMap<String, Runnable>callbackMap = new HashMap<String, Runnable>();
+	
+	
 	public RFDuinoBLEService(String UUID) {
 		super(UUID);
 	}
 	
 	
-/*	@Override
+	
+    @Override
 	public void onWatcherValueChanged(BluetoothLEClientChar characteristic) {
 		super.onWatcherValueChanged(characteristic);
-		// TBD
+		for (String uuid: callbackMap.keySet()){
+			if (characteristic.getCharUUID().equals(uuid)){
+				callbackMap.get(uuid).run();
+			}
+		}
 	}
 	
 	@Override
 	public boolean registerWatcher() {
 		return super.registerWatcher();
+		
 	}
 
 	@Override
 	public boolean unregisterWatcher() {
 		return super.unregisterWatcher();
 	}
-	*/  
+	 
 	 
 }
